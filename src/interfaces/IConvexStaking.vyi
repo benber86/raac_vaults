@@ -1,0 +1,7 @@
+# pragma version ^0.4.1
+# @license MIT
+
+
+@external
+def withdrawAndUnwrap(amount: uint256, claim: bool):
+    ...

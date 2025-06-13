@@ -1,0 +1,82 @@
+# pragma version ^0.4.1
+# @license MIT
+
+
+# Functions
+
+@external
+def set_strategy(strategy_: address):
+    ...
+
+
+@view
+@external
+def factory() -> address:
+    ...
+
+
+@view
+@external
+def treasury() -> address:
+    ...
+
+
+@view
+@external
+def strategy() -> address:
+    ...
+
+
+@external
+def set_approvals():
+    ...
+
+
+@external
+def set_extra_reward_hook(new_hook: address):
+    ...
+
+
+@external
+def set_target_hook(new_hook: address):
+    ...
+
+
+@external
+def transfer_to_reward_hook(token: address, amount: uint256):
+    ...
+
+
+@external
+def transfer_to_target_hook(token: address, amount: uint256):
+    ...
+
+
+@view
+@external
+def extra_reward_hook() -> address:
+    ...
+
+
+@view
+@external
+def target_hook() -> address:
+    ...
+
+
+@external
+def harvest(
+    _caller: address,
+    _min_amount_out: uint256,
+    _extra_rewards: DynArray[address, 10],
+    _reward_hook_calldata: Bytes[4096],
+    _target_hook_calldata: Bytes[4096],
+    _harvester_calldata: Bytes[4096],
+) -> uint256:
+    ...
+
+
+@view
+@external
+def allowed_slippage() -> uint256:
+    ...

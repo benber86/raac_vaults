@@ -1,0 +1,61 @@
+[project]
+src = "src"
+out = "out"
+dot_env = ".env"
+name = "raac-pounder"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = ["snekmate"]
+default_network_name = "mainnet-fork"
+
+
+[networks.mainnet-fork]
+url = "${MAINNET_RPC_URL}"
+explorer_uri = "https://api.etherscan.com/api/"
+explorer_type = "etherscan"
+explorer_api_key="${ETHERSCAN_TOKEN}"
+chain_id = 1
+fork = true
+
+
+[networks.mainnet]
+url = "${MAINNET_RPC_URL}"
+explorer_uri = "https://api.etherscan.com/api/"
+explorer_type = "etherscan"
+explorer_api_key="${ETHERSCAN_TOKEN}"
+chain_id = 1
+fork = false
+
+[networks.mainnet-fork.contracts.convex_booster]
+address = "0xF403C135812408BFbE8713b5A23a04b3D48AAE31"
+abi_from_explorer = true
+
+[networks.mainnet-fork.contracts.crvusd_token]
+address = "0xf939E0A03FB07F59A73314E73794Be0E57ac1b4E"
+abi_from_explorer = true
+
+[networks.mainnet-fork.contracts.crv_token]
+address = "0xD533a949740bb3306d119CC777fa900bA034cd52"
+abi_from_explorer = true
+
+[networks.mainnet-fork.contracts.cvx_token]
+address = "0x4e3FBD56CD56c3e72c1403e103b45Db9da5B9D2B"
+abi_from_explorer = true
+
+[networks.mainnet-fork.contracts.pyusd_token]
+address = "0x6c3ea9036406852006290770BEdFcAbA0e23A0e8"
+abi_from_explorer = true
+
+[networks.mainnet-fork.contracts.cvx_eth_pool]
+address = "0xB576491F1E6e5E62f1d8F26062Ee822B40B0E0d4"
+abi_from_explorer = true
+
+[networks.mainnet-fork.contracts.tri_crv_pool]
+address = "0x4eBdF703948ddCEA3B11f675B4D1Fba9d2414A14"
+abi_from_explorer = true
+
+[networks.mainnet-fork.contracts.pyusd_crvusd_pool]
+address = "0x625E92624Bc2D88619ACCc1788365A69767f6200"
+abi_from_explorer = true

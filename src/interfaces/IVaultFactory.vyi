@@ -1,0 +1,108 @@
+# pragma version ^0.4.1
+# @license MIT
+
+
+# Structs
+
+struct VaultRecord:
+    vault: address
+    booster_id: uint256
+    strategy: address
+    harvester: address
+    token: address
+
+
+# Events
+
+event VaultDeployed:
+    id: uint256
+    vault: address
+    strategy: address
+    harvester: address
+    token: address
+
+
+event OwnershipTransferred:
+    previous_owner: address
+    new_owner: address
+
+
+# Functions
+
+@external
+def transfer_ownership(new_owner: address):
+    ...
+
+
+@external
+def renounce_ownership():
+    ...
+
+
+@view
+@external
+def owner() -> address:
+    ...
+
+
+@external
+def set_treasury(new_treasury: address):
+    ...
+
+
+@external
+def deploy_new_vault(
+    booster_id: uint256,
+    harvest_manager: address,
+    strategy_manager: address,
+    harvester_reward_hook: address,
+    harvester_target_hook: address,
+) -> (address, address, address):
+    ...
+
+
+@view
+@external
+def VAULT_IMPLEMENTATION() -> address:
+    ...
+
+
+@view
+@external
+def STRATEGY_IMPLEMENTATION() -> address:
+    ...
+
+
+@view
+@external
+def HARVESTER_IMPLEMENTATION() -> address:
+    ...
+
+
+@view
+@external
+def treasury() -> address:
+    ...
+
+
+@view
+@external
+def vault_registry(arg0: uint256) -> VaultRecord:
+    ...
+
+
+@view
+@external
+def vaults_deployed() -> uint256:
+    ...
+
+
+@external
+def update_harvester(new_harvester: address):
+    ...
+
+
+@external
+@view
+def vault_to_id(_vault: address) -> uint256:
+    ...

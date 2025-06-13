@@ -1,0 +1,330 @@
+# pragma version ^0.4.1
+# @license MIT
+
+
+# Events
+
+event RoleGranted:
+    role: bytes32
+    account: address
+    sender: address
+
+
+event OwnershipTransferred:
+    previous_owner: address
+    new_owner: address
+
+
+event RoleMinterChanged:
+    minter: address
+    status: bool
+
+
+event RoleRevoked:
+    role: bytes32
+    account: address
+    sender: address
+
+
+event RoleAdminChanged:
+    role: bytes32
+    previousAdminRole: bytes32
+    newAdminRole: bytes32
+
+
+event Transfer:
+    sender: address
+    receiver: address
+    value: uint256
+
+
+event Approval:
+    owner: address
+    spender: address
+    value: uint256
+
+
+event Deposit:
+    sender: address
+    owner: address
+    assets: uint256
+    shares: uint256
+
+
+event Withdraw:
+    sender: address
+    receiver: address
+    owner: address
+    assets: uint256
+    shares: uint256
+
+
+# Functions
+
+@view
+@external
+def supportsInterface(interface_id: bytes4) -> bool:
+    ...
+
+
+@external
+def grantRole(role: bytes32, account: address):
+    ...
+
+
+@external
+def revokeRole(role: bytes32, account: address):
+    ...
+
+
+@external
+def renounceRole(role: bytes32, account: address):
+    ...
+
+
+@external
+def set_role_admin(role: bytes32, admin_role: bytes32):
+    ...
+
+
+@view
+@external
+def DEFAULT_ADMIN_ROLE() -> bytes32:
+    ...
+
+
+@view
+@external
+def hasRole(arg0: bytes32, arg1: address) -> bool:
+    ...
+
+
+@view
+@external
+def getRoleAdmin(arg0: bytes32) -> bytes32:
+    ...
+
+
+@view
+@external
+def totalSupply() -> uint256:
+    ...
+
+
+@view
+@external
+def balanceOf(arg0: address) -> uint256:
+    ...
+
+
+@external
+def transfer(to: address, amount: uint256) -> bool:
+    ...
+
+
+@external
+def transferFrom(owner: address, to: address, amount: uint256) -> bool:
+    ...
+
+
+@external
+def approve(spender: address, amount: uint256) -> bool:
+    ...
+
+
+@view
+@external
+def allowance(arg0: address, arg1: address) -> uint256:
+    ...
+
+
+@view
+@external
+def name() -> String[25]:
+    ...
+
+
+@view
+@external
+def symbol() -> String[5]:
+    ...
+
+
+@view
+@external
+def decimals() -> uint8:
+    ...
+
+
+@external
+def permit(
+    owner: address,
+    spender: address,
+    amount: uint256,
+    deadline: uint256,
+    v: uint8,
+    r: bytes32,
+    s: bytes32,
+):
+    ...
+
+
+@view
+@external
+def nonces(arg0: address) -> uint256:
+    ...
+
+
+@view
+@external
+def DOMAIN_SEPARATOR() -> bytes32:
+    ...
+
+
+@view
+@external
+def eip712Domain() -> (
+    bytes1, String[50], String[20], uint256, address, bytes32, DynArray[uint256, 32]
+):
+    ...
+
+
+@view
+@external
+def totalAssets() -> uint256:
+    ...
+
+
+@view
+@external
+def convertToShares(assets: uint256) -> uint256:
+    ...
+
+
+@view
+@external
+def convertToAssets(shares: uint256) -> uint256:
+    ...
+
+
+@view
+@external
+def maxDeposit(receiver: address) -> uint256:
+    ...
+
+
+@view
+@external
+def previewDeposit(assets: uint256) -> uint256:
+    ...
+
+
+@external
+def deposit(assets: uint256, receiver: address) -> uint256:
+    ...
+
+
+@view
+@external
+def maxMint(receiver: address) -> uint256:
+    ...
+
+
+@view
+@external
+def previewMint(shares: uint256) -> uint256:
+    ...
+
+
+@external
+def mint(shares: uint256, receiver: address) -> uint256:
+    ...
+
+
+@view
+@external
+def maxWithdraw(owner: address) -> uint256:
+    ...
+
+
+@view
+@external
+def previewWithdraw(assets: uint256) -> uint256:
+    ...
+
+
+@external
+def withdraw(assets: uint256, receiver: address, owner: address) -> uint256:
+    ...
+
+
+@view
+@external
+def maxRedeem(owner: address) -> uint256:
+    ...
+
+
+@view
+@external
+def previewRedeem(shares: uint256) -> uint256:
+    ...
+
+
+@external
+def redeem(shares: uint256, receiver: address, owner: address) -> uint256:
+    ...
+
+
+@view
+@external
+def asset() -> address:
+    ...
+
+
+@view
+@external
+def strategy() -> address:
+    ...
+
+
+@external
+def set_platform_fee(new_platform_fee: uint256):
+    ...
+
+
+@external
+def set_caller_fee(new_caller_fee: uint256):
+    ...
+
+
+@external
+def update_harvester(new_harvester: address):
+    ...
+
+
+@external
+def set_extra_reward_hook(new_hook: address):
+    ...
+
+
+@external
+def set_target_hook(new_hook: address):
+    ...
+
+
+@view
+@external
+def last_harvest() -> uint256:
+    ...
+
+
+@view
+@external
+def STRATEGY_MANAGER_ROLE() -> bytes32:
+    ...
+
+
+@view
+@external
+def HARVESTER_ROLE() -> bytes32:
+    ...
