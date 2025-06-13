@@ -1,0 +1,22 @@
+# pragma version ^0.4.1
+# @license MIT
+
+
+@external
+def getReward() -> bool:
+    ...
+
+
+@view
+def extraRewards(index: uint256) -> uint256:
+    ...
+
+
+@view
+def extraRewardsLength() -> uint256:
+    ...
+
+
+@view
+def balanceOf(user: address) -> uint256:
+    ...

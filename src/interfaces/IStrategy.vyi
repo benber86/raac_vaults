@@ -1,0 +1,95 @@
+# pragma version ^0.4.1
+# @license MIT
+
+
+@external
+def set_vault(vault: address):
+    ...
+
+
+@external
+def set_approvals():
+    ...
+
+
+@external
+def set_platform_fee(new_platform_fee: uint256):
+    ...
+
+
+@external
+def set_caller_fee(new_caller_fee: uint256):
+    ...
+
+
+@external
+def update_harvester(new_harvester: address):
+    ...
+
+
+@external
+def set_extra_reward_hook(new_hook: address):
+    ...
+
+
+@external
+def set_target_hook(new_hook: address):
+    ...
+
+
+@external
+def deposit(amount: uint256):
+    ...
+
+
+@external
+def withdraw(amount: uint256, receiver: address):
+    ...
+
+
+@external
+def harvest(
+    _caller: address,
+    _min_amount_out: uint256,
+    _extra_rewards: DynArray[address, 10],
+    _reward_hook_calldata: Bytes[4096],
+    _target_hook_calldata: Bytes[4096],
+    _harvester_calldata: Bytes[4096],
+):
+    ...
+
+
+@view
+@external
+def asset() -> address:
+    ...
+
+
+@view
+@external
+def harvester() -> address:
+    ...
+
+
+@view
+@external
+def platform_fee() -> uint256:
+    ...
+
+
+@view
+@external
+def caller_fee() -> uint256:
+    ...
+
+
+@view
+@external
+def vault() -> address:
+    ...
+
+
+@view
+@external
+def total_assets() -> uint256:
+    ...

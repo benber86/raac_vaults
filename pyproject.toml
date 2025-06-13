@@ -1,0 +1,24 @@
+[project]
+name = "raac-pounder"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "black>=25.1.0",
+    "eth-utils>=5.3.0",
+    "mamushi>=0.0.5",
+    "moccasin>=0.4.0",
+    "natrix==0.1.6",
+    "pre-commit>=4.2.0",
+    "vyper==0.4.1",
+]
+
+[tool.isort]
+profile = "black"
+
+[tool.natrix]
+files = ["src/"]
+
+
+disabled_rules = ["NTX4", "NTX9", "NTX5"]
