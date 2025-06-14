@@ -1,4 +1,4 @@
-# RAAC Pounder
+# RAAC Vaults
 
 A modular DeFi yield optimization protocol built on Vyper that autocompounds rewards from Convex Finance positions through various swap mechanisms.
 
@@ -83,7 +83,7 @@ The protocol supports three different harvester implementations, each optimized 
 
 #### Oracle Harvester (`src/harvesters/oracle_harvester.vy`)
 - **Purpose**: Fully permissionless with oracle-based MEV protection
-- **Security**: Uses Curve pool oracles and Chainlink (for crvUSD) to validate swap prices. This allows for permissionless harvests, but is much more gas intensive. In the basic implementation, we pool oracle for tokens swaps. For the final liquidity addition prior to autocompounding (meant for 2-asset stableswap NG pools) we use the formula `min(prices) * virtual_price` as an oracle for the LP token price where prices are obtained via Chainlink (for crvUSD) and the pool's internal oracle. Relying on pool oracles may also temporarily prevent harvesting in times of high volatility when oracles are lagging compared to spot price. The acceptable level of slippage can be adjusted by the harvest manager.
+- **Security**: Uses Curve pool oracles and Chainlink (for crvUSD) to validate swap prices. This allows for permissionless harvests, but is much more gas intensive. In the basic implementation, we use pool oracle for tokens swaps. For the final liquidity addition prior to autocompounding (meant for 2-asset stableswap NG pools) we use the formula `min(usd_prices) * virtual_price` as an oracle for the LP token price where prices are obtained via Chainlink (for crvUSD) and the pool's internal oracle. Relying on pool oracles may also temporarily prevent harvesting in times of high volatility when oracles are lagging compared to spot price. The acceptable level of slippage can be adjusted by the harvest manager.
 
 ### Hooks
 
