@@ -121,7 +121,7 @@ The protocol implements a dual-fee structure to sustain operations and incentivi
 - **Default Rate**: 1% (100 basis points) of total reward value
 - **Maximum**: Set to 10% (1000 basis points)
 - **Recipient**: Address that calls the harvest function (keeper bots, EOAs, etc.)
-- **Management**: Configurable by Strategy Manager role
+- **Management**: Configurable by Strategy Manager role - however may need to be handled differently as the caller fee should be able to be adjusted to optimize harvest frequency based on expected yield and gas prices.
 
 
 ## Management Roles
