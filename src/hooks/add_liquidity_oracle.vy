@@ -67,16 +67,16 @@ def _calc_lp_token_price(
     # Get the pool's price oracle
     # price_oracle(0) always returns price of coin1 in terms of coin0
     price_oracle: uint256 = staticcall ICurveStableSwapNG(_pool).price_oracle(0)
-
+    other_price_usd: uint256 = 0
     if _crvusd_index == 0:
         # crvUSD is coin0, so price_oracle gives us coin1 price in crvUSD
         # To get coin1 price in USD: multiply by crvUSD price
-        other_price_usd: uint256 = (price_oracle * _crvusd_price) // 10**18
+        other_price_usd = (price_oracle * _crvusd_price) // 10**18
     else:
         # crvUSD is coin1, so price_oracle gives us crvUSD price in coin0
         # To get coin0 price in USD: invert the ratio and multiply by crvUSD price
         # coin0_price_usd = crvusd_price / price_oracle
-        other_price_usd: uint256 = (_crvusd_price * 10**18) // price_oracle
+        other_price_usd = (_crvusd_price * 10**18) // price_oracle
 
     min_price: uint256 = _crvusd_price if _crvusd_price < other_price_usd else other_price_usd
 
