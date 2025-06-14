@@ -121,7 +121,6 @@ def test_vault_withdraw_after_harvest_profit(
     user = funded_accounts[0]
 
     vault_contract = raac_vault.at(vault_addr)
-    strategy_contract = strategy.at(strategy_addr)
 
     user_lp_balance = pyusd_crvusd_pool.balanceOf(user)
     deposit_amount = user_lp_balance // 2
@@ -145,8 +144,8 @@ def test_vault_withdraw_after_harvest_profit(
     )
     target_hook_calldata = selector + encoded_args
 
-    with boa.env.prank(vault_addr):
-        strategy_contract.harvest(user, 0, [], b"", target_hook_calldata, b"")
+    with boa.env.prank(harvest_manager):
+        vault_contract.harvest(user, 0, [], b"", target_hook_calldata, b"")
 
     initial_user_lp_balance = pyusd_crvusd_pool.balanceOf(user)
     withdrawable_assets = vault_contract.convertToAssets(shares_received)
@@ -161,13 +160,16 @@ def test_vault_withdraw_after_harvest_profit(
 
 
 def test_vault_harvest_reverts_high_min_amount_out(
-    test_permissioned_vault, crvusd_token, funded_accounts, pyusd_crvusd_pool, harvest_manager
+    test_permissioned_vault,
+    crvusd_token,
+    funded_accounts,
+    pyusd_crvusd_pool,
+    harvest_manager,
 ):
     vault_addr, strategy_addr, harvester_addr = test_permissioned_vault
     user = funded_accounts[0]
 
     vault_contract = raac_vault.at(vault_addr)
-    strategy_contract = strategy.at(strategy_addr)
 
     user_lp_balance = pyusd_crvusd_pool.balanceOf(user)
     deposit_amount = user_lp_balance // 2

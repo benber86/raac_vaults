@@ -2,7 +2,7 @@ import boa
 from boa.util.abi import abi_encode
 from eth_utils import function_signature_to_4byte_selector
 
-from src import raac_vault, strategy
+from src import raac_vault
 from tests.conftest import ZERO_ADDRESS
 from tests.utils.constants import (
     CRVUSD_INDEX_PYUSD_POOL,

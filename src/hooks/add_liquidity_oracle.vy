@@ -78,7 +78,6 @@ def _calc_lp_token_price(
         # coin0_price_usd = crvusd_price / price_oracle
         other_price_usd: uint256 = (_crvusd_price * 10**18) // price_oracle
 
-    # Use the minimum of the two coin prices for conservative LP valuation
     min_price: uint256 = _crvusd_price if _crvusd_price < other_price_usd else other_price_usd
 
     # LP token price = virtual_price * min(coin prices)
