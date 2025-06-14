@@ -67,7 +67,6 @@ def test_oracle_slippage_protection(
     user = funded_accounts[0]
 
     vault_contract = raac_vault.at(vault_addr)
-    strategy_contract = strategy.at(strategy_addr)
     harvester_contract = oracle_harvester.at(harvester_addr)
 
     user_lp_balance = pyusd_crvusd_pool.balanceOf(user)
@@ -97,9 +96,7 @@ def test_oracle_slippage_protection(
 
     try:
         with boa.env.prank(harvest_manager):
-            vault_contract.harvest(
-                user, 0, [], b"", target_hook_calldata, b""
-            )
+            vault_contract.harvest(user, 0, [], b"", target_hook_calldata, b"")
     except Exception as e:
         # If it reverts, it should be due to slippage protection
         assert (
@@ -155,20 +152,18 @@ def test_oracle_vault_reverts_on_stale_price(
     # Should revert due to stale price
     with boa.env.prank(harvest_manager):
         with boa.reverts("Stale price"):
-            vault_contract.harvest(
-                user, 0, [], b"", target_hook_calldata, b""
-            )
+            vault_contract.harvest(user, 0, [], b"", target_hook_calldata, b"")
 
 
 def test_oracle_vault_protects_against_pool_manipulation(
-        test_oracle_vault,
-        crvusd_token,
-        pyusd_token,
-        funded_accounts,
-        pyusd_crvusd_pool,
-        get_base_reward_pool,
-        crvusd_minter,
-        harvest_manager,
+    test_oracle_vault,
+    crvusd_token,
+    pyusd_token,
+    funded_accounts,
+    pyusd_crvusd_pool,
+    get_base_reward_pool,
+    crvusd_minter,
+    harvest_manager,
 ):
     vault_addr, strategy_addr, harvester_addr = test_oracle_vault
     user = funded_accounts[0]
@@ -209,26 +204,34 @@ def test_oracle_vault_protects_against_pool_manipulation(
     with boa.env.prank(crvusd_minter):
         crvusd_token.mint(manipulator, crvusd_needed * 2)
 
-    spot_price_before = pyusd_crvusd_pool.get_dy(1, 0, 10 ** 18)  # crvUSD -> PYUSD
+    spot_price_before = pyusd_crvusd_pool.get_dy(
+        1, 0, 10**18
+    )  # crvUSD -> PYUSD
     oracle_price_before = pyusd_crvusd_pool.price_oracle(0)
 
-    print(f"Spot price before manipulation (1 crvUSD -> PYUSD): {spot_price_before / 1e6:.6f}")
-    print(f"Oracle price before manipulation: {oracle_price_before / 1e18:.6f}")
+    print(
+        f"Spot price before manipulation (1 crvUSD -> PYUSD): {spot_price_before / 1e6:.6f}"
+    )
+    print(
+        f"Oracle price before manipulation: {oracle_price_before / 1e18:.6f}"
+    )
 
     # Execute manipulation
     with boa.env.prank(manipulator):
         crvusd_token.approve(pyusd_crvusd_pool.address, crvusd_needed * 2)
-        pyusd_received = pyusd_crvusd_pool.exchange(
-            1, 0, crvusd_needed, 0
-        )
+        pyusd_received = pyusd_crvusd_pool.exchange(1, 0, crvusd_needed, 0)
 
-    spot_price_after = pyusd_crvusd_pool.get_dy(1, 0, 10 ** 18)
+    spot_price_after = pyusd_crvusd_pool.get_dy(1, 0, 10**18)
     oracle_price_after = pyusd_crvusd_pool.price_oracle(0)
 
-    print(f"Spot price after manipulation (1 crvUSD -> PYUSD): {spot_price_after / 1e6:.6f}")
+    print(
+        f"Spot price after manipulation (1 crvUSD -> PYUSD): {spot_price_after / 1e6:.6f}"
+    )
     print(f"Oracle price after manipulation: {oracle_price_after / 1e18:.6f}")
 
-    spot_price_change = ((spot_price_after - spot_price_before) / spot_price_before * 100)
+    spot_price_change = (
+        (spot_price_after - spot_price_before) / spot_price_before * 100
+    )
     print(f"Spot price change: {spot_price_change:.2f}%")
 
     crvusd_after = crvusd_token.balanceOf(pyusd_crvusd_pool.address)
@@ -252,9 +255,7 @@ def test_oracle_vault_protects_against_pool_manipulation(
     # should revert due to oracle protection detecting manipulation
     with boa.env.prank(harvest_manager):
         with boa.reverts():
-            vault_contract.harvest(
-                user, 0, [], b"", target_hook_calldata, b""
-            )
+            vault_contract.harvest(user, 0, [], b"", target_hook_calldata, b"")
 
     # undo the manipulation and show harvest works normally
     with boa.env.prank(manipulator):
@@ -264,4 +265,6 @@ def test_oracle_vault_protects_against_pool_manipulation(
         vault_contract.harvest(user, 0, [], b"", target_hook_calldata, b"")
 
     final_total_assets = vault_contract.totalAssets()
-    assert final_total_assets > deposit_amount, "Harvest should have succeeded after manipulation was undone"
+    assert (
+        final_total_assets > deposit_amount
+    ), "Harvest should have succeeded after manipulation was undone"
