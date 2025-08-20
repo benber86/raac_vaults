@@ -1,4 +1,4 @@
-# pragma version ^0.4.1
+# pragma version 0.4.3
 
 """
 @title RAAC Convex Strategy
@@ -17,11 +17,11 @@
 """
 
 from ethereum.ercs import IERC20
-from modules import constants
-from interfaces import IBooster
-from interfaces import IConvexStaking
-from interfaces import IBasicRewards
-from interfaces import IHarvester
+from src.modules import constants
+from src.interfaces import IBooster
+from src.interfaces import IConvexStaking
+from src.interfaces import IBasicRewards
+from src.interfaces import IHarvester
 
 # The LP token being managed by this strategy
 asset: public(immutable(address))

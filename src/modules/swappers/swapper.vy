@@ -1,10 +1,10 @@
-# pragma version ^0.4.1
+# pragma version 0.4.3
 # @license MIT
 
 from ethereum.ercs import IERC20
-from ..fee_collectors import fee_collector
-from .. import constants
-from ...interfaces import IStrategy
+from src.modules.fee_collectors import fee_collector
+from src.modules import constants
+from src.interfaces import IStrategy
 
 initializes: fee_collector
 

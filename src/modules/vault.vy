@@ -1,12 +1,12 @@
-# pragma version ^0.4.1
+# pragma version 0.4.3
 # @license MIT
 
 from ethereum.ercs import IERC20
 from snekmate.auth import access_control
-from . import erc4626
-from ..interfaces import IStrategy
-from ..interfaces import IVaultFactory
-from ..interfaces import IHarvester
+from src.modules import erc4626
+from src.interfaces import IStrategy
+from src.interfaces import IVaultFactory
+from src.interfaces import IHarvester
 
 initializes: access_control
 initializes: erc4626

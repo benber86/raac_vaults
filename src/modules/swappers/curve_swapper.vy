@@ -1,12 +1,12 @@
-# pragma version ^0.4.1
+# pragma version 0.4.3
 # @license MIT
 
 from ethereum.ercs import IERC20
-from ...interfaces import ICurveV2Pool
-from ...interfaces import ICurveTriCryptoFactoryNG
-from ...interfaces import IStrategy
-from .. import constants
-from . import swapper
+from src.interfaces import ICurveV2Pool
+from src.interfaces import ICurveTriCryptoFactoryNG
+from src.interfaces import IStrategy
+from src.modules import constants
+from src.modules.swappers import swapper
 
 initializes: swapper
 

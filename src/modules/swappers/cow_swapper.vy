@@ -1,4 +1,4 @@
-# pragma version ^0.4.1
+# pragma version 0.4.3
 
 """
 @title CoW Protocol Conditional Order Handler
@@ -24,10 +24,10 @@
 
 from ethereum.ercs import IERC20
 from ethereum.ercs import IERC165
-from ...interfaces import IStrategy
-from ...interfaces import IVault
-from .. import constants
-from . import swapper
+from src.interfaces import IStrategy
+from src.interfaces import IVault
+from src.modules import constants
+from src.modules.swappers import swapper
 
 initializes: swapper
 

@@ -1,4 +1,4 @@
-# pragma version ^0.4.1
+# pragma version 0.4.3
 """
 @title RAAC Vault hook to add one-sided liquidity to an NG Curve pool
 @custom:contract-name raac_add_liquidity_hook
@@ -7,8 +7,8 @@
 """
 
 from ethereum.ercs import IERC20
-from ..interfaces import ICurveStableSwapNG
-from ..interfaces import IHarvester
+from src.interfaces import ICurveStableSwapNG
+from src.interfaces import IHarvester
 
 MAX_COINS: constant(uint256) = 8
 

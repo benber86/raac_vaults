@@ -1,10 +1,10 @@
-# pragma version ^0.4.1
+# pragma version 0.4.3
 # @license MIT
 
 from ethereum.ercs import IERC20
-from modules import vault
-from modules import constants
-from interfaces import IStrategy
+from src.modules import vault
+from src.modules import constants
+from src.interfaces import IStrategy
 
 initializes: vault
 
