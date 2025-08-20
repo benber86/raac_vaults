@@ -9,8 +9,8 @@ from moccasin.config import get_config
 from moccasin.moccasin_account import MoccasinAccount
 
 from src import factory, raac_vault, strategy
-from src.harvesters import cow_harvester, curve_harvester, oracle_harvester
-from src.hooks import add_liquidity, add_liquidity_oracle, handle_extra_rewards
+from src.harvesters import cow_harvester, curve_harvester
+from src.hooks import add_liquidity, handle_extra_rewards
 from tests.utils.abis import BASE_REWARD_POOL_ABI, CONVEX_STASH_ABI, ERC20_ABI
 from tests.utils.constants import (
     CONVEX_BOOSTER,
@@ -278,58 +278,5 @@ def deploy_cow_vault_for_pool(
 def test_cow_vault(deploy_cow_vault_for_pool, add_liquidity_hook):
     vault_addr, strategy_addr, harvester_addr = deploy_cow_vault_for_pool(
         PYUSD_BOOSTER_ID, target_hook=add_liquidity_hook.address
-    )
-    return vault_addr, strategy_addr, harvester_addr
-
-
-@pytest.fixture(scope="session")
-def oracle_harvester_blueprint() -> VyperContract:
-    return oracle_harvester.deploy_as_blueprint()
-
-
-@pytest.fixture(scope="session")
-def add_liquidity_oracle_hook():
-    return add_liquidity_oracle.deploy()
-
-
-@pytest.fixture(scope="session")
-def oracle_vault_factory(
-    raac_vault_blueprint,
-    strategy_blueprint,
-    oracle_harvester_blueprint,
-    treasury,
-):
-    return factory.deploy(
-        raac_vault_blueprint,
-        strategy_blueprint,
-        oracle_harvester_blueprint,
-        treasury,
-    )
-
-
-@pytest.fixture(scope="session")
-def deploy_oracle_vault_for_pool(
-    oracle_vault_factory, harvest_manager, strategy_manager
-) -> Callable[[int, str, str], tuple]:
-    def inner(
-        booster_id: int,
-        extra_reward_hook: str = ZERO_ADDRESS,
-        target_hook: str = ZERO_ADDRESS,
-    ) -> tuple:
-        return oracle_vault_factory.deploy_new_vault(
-            booster_id,
-            harvest_manager,
-            strategy_manager,
-            extra_reward_hook,
-            target_hook,
-        )
-
-    return inner
-
-
-@pytest.fixture(scope="module")
-def test_oracle_vault(deploy_oracle_vault_for_pool, add_liquidity_oracle_hook):
-    vault_addr, strategy_addr, harvester_addr = deploy_oracle_vault_for_pool(
-        PYUSD_BOOSTER_ID, target_hook=add_liquidity_oracle_hook.address
     )
     return vault_addr, strategy_addr, harvester_addr
