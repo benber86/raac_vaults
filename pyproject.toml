@@ -11,7 +11,8 @@ dependencies = [
     "moccasin==0.3.8",
     "natrix==0.1.6",
     "pre-commit>=4.2.0",
-    "vyper==0.4.1",
+    "titanoboa==0.2.7",
+    "vyper==0.4.3",
 ]
 
 [tool.isort]
