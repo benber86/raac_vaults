@@ -1,7 +1,7 @@
 # pragma version ^0.4.1
 # @license MIT
 
-from ..modules import cow_swapper
+from ..modules.swappers import cow_swapper
 from ..modules import constants
 
 initializes: cow_swapper

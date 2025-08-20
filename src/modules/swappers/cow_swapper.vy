@@ -24,9 +24,9 @@
 
 from ethereum.ercs import IERC20
 from ethereum.ercs import IERC165
-from ..interfaces import IStrategy
-from ..interfaces import IVault
-from . import constants
+from ...interfaces import IStrategy
+from ...interfaces import IVault
+from .. import constants
 from . import swapper
 
 initializes: swapper

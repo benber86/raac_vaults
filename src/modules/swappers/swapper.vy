@@ -2,9 +2,9 @@
 # @license MIT
 
 from ethereum.ercs import IERC20
-from . import fee_collector
-from . import constants
-from ..interfaces import IStrategy
+from ..fee_collectors import fee_collector
+from .. import constants
+from ...interfaces import IStrategy
 
 initializes: fee_collector
 
