@@ -1,4 +1,4 @@
-# pragma version ^0.4.1
+# pragma version 0.4.3
 
 """
 @title Factory for deploying RAAC stablecoin vaults on top of Convex
@@ -14,8 +14,8 @@
      CRV/CVX rewards back into the underlying LP position.
 """
 
-from modules import constants
-from modules.utils import conversion
+from src.modules import constants
+from src.modules.utils import conversion
 from interfaces import IStrategy
 from interfaces import IVault
 from interfaces import IBooster

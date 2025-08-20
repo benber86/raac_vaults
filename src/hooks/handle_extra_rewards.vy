@@ -1,4 +1,4 @@
-# pragma version ^0.4.1
+# pragma version 0.4.3
 """
 @title RAAC Vault hook to process extra reward tokens using Curve Router
 @custom:contract-name raac_extra_reward_hook
@@ -7,10 +7,10 @@
 """
 
 from ethereum.ercs import IERC20
-from ..interfaces import ICurveRouter
-from ..interfaces import IHarvester
-from ..interfaces import IStrategy
-from ..modules import constants
+from src.interfaces import ICurveRouter
+from src.interfaces import IHarvester
+from src.interfaces import IStrategy
+from src.modules import constants
 
 CURVE_ROUTER: constant(address) = 0x45312ea0eFf7E09C83CBE249fa1d7598c4C8cd4e
 
