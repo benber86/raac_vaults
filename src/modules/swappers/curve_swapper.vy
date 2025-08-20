@@ -2,10 +2,10 @@
 # @license MIT
 
 from ethereum.ercs import IERC20
-from ..interfaces import ICurveV2Pool
-from ..interfaces import ICurveTriCryptoFactoryNG
-from ..interfaces import IStrategy
-from . import constants
+from ...interfaces import ICurveV2Pool
+from ...interfaces import ICurveTriCryptoFactoryNG
+from ...interfaces import IStrategy
+from .. import constants
 from . import swapper
 
 initializes: swapper
