@@ -21,14 +21,11 @@ wheels = [
 
 [[package]]
 name = "asttokens"
-version = "2.4.1"
+version = "3.0.0"
 source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "six" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/45/1d/f03bcb60c4a3212e15f99a56085d93093a497718adf828d050b9d675da81/asttokens-2.4.1.tar.gz", hash = "sha256:b03869718ba9a6eb027e134bfdf69f38a236d681c83c160d510768af11254ba0", size = 62284 }
+sdist = { url = "https://files.pythonhosted.org/packages/4a/e7/82da0a03e7ba5141f05cce0d302e6eed121ae055e0456ca228bf693984bc/asttokens-3.0.0.tar.gz", hash = "sha256:0dcd8baa8d62b0c1d118b399b2ddba3c4aff271d0d7a9e0d4c1681c79035bbc7", size = 61978 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/45/86/4736ac618d82a20d87d2f92ae19441ebc7ac9e7a581d7e58bbe79233b24a/asttokens-2.4.1-py2.py3-none-any.whl", hash = "sha256:051ed49c3dcae8913ea7cd08e46a606dba30b79993209636c4875bc1d637bc24", size = 27764 },
+    { url = "https://files.pythonhosted.org/packages/25/8a/c46dcc25341b5bce5472c718902eb3d38600a903b14fa6aeecef3f21a46f/asttokens-3.0.0-py3-none-any.whl", hash = "sha256:e3078351a059199dd5138cb1c706e6430c05eff2ff136af5eb4790f9d28932e2", size = 26918 },
 ]
 
 [[package]]
@@ -1039,11 +1036,11 @@ wheels = [
 
 [[package]]
 name = "natrix"
-version = "0.1.6"
+version = "0.1.9"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/b6/ad/a5b4e598b6d015dfad13d681f3730f7c28eda386bb447168df2af11637bf/natrix-0.1.6.tar.gz", hash = "sha256:c47d61e8111774f9773c488364bb43cb37a18d843deb10a27afd87e289a561e0", size = 113395 }
+sdist = { url = "https://files.pythonhosted.org/packages/41/a8/7bded232de2ade2e2aad22abcc4a1612e6ca4732b4cd59c7c8778f96dedc/natrix-0.1.9.tar.gz", hash = "sha256:4c502f330fbb8c0bc63ba843c591ed73118eef4f853a0769b757305145b91e8f", size = 102556 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/01/ac/16095aabb665b6144e12713521855edd5662e8e0a155b227792c2f4c484b/natrix-0.1.6-py3-none-any.whl", hash = "sha256:cca0867f4a4e9c7f12e6cfb6651f2d1e0b9f7caf933eda2c6e698a19105e88ba", size = 32921 },
+    { url = "https://files.pythonhosted.org/packages/24/19/8908c6b4b9f14bbabad059c23f145edb40893ae58d6547e4b2e228d13817/natrix-0.1.9-py3-none-any.whl", hash = "sha256:c9930c7ac1cfecb28a1cde461eaa94aef7e8ebef53e3567cc58885260bc1785a", size = 38675 },
 ]
 
 [[package]]
@@ -1066,11 +1063,11 @@ wheels = [
 
 [[package]]
 name = "packaging"
-version = "23.2"
+version = "24.2"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/fb/2b/9b9c33ffed44ee921d0967086d653047286054117d584f1b1a7c22ceaf7b/packaging-23.2.tar.gz", hash = "sha256:048fb0e9405036518eaaf48a55953c750c11e1a1b68e0dd1a9d62ed0c092cfc5", size = 146714 }
+sdist = { url = "https://files.pythonhosted.org/packages/d0/63/68dbb6eb2de9cb10ee4c9c14a0148804425e13c4fb20d61cce69f53106da/packaging-24.2.tar.gz", hash = "sha256:c228a6dc5e932d346bc5739379109d49e8853dd8223571c7c5b55260edc0b97f", size = 163950 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/ec/1a/610693ac4ee14fcdf2d9bf3c493370e4f2ef7ae2e19217d7a237ff42367d/packaging-23.2-py3-none-any.whl", hash = "sha256:8c491190033a9af7e1d931d0b5dacc2ef47509b34dd0de67ed209b5203fc88c7", size = 53011 },
+    { url = "https://files.pythonhosted.org/packages/88/ef/eb23f262cca3c0c4eb7ab1933c3b1f03d021f2c48f54763065b6f0e321be/packaging-24.2-py3-none-any.whl", hash = "sha256:09abb1bccd265c01f4a3aa3f7a7db064b36514d2cba19a2f694fe6150451a759", size = 65451 },
 ]
 
 [[package]]
@@ -1537,7 +1534,7 @@ requires-dist = [
     { name = "eth-utils", specifier = ">=5.3.0" },
     { name = "mamushi", specifier = ">=0.0.5" },
     { name = "moccasin", specifier = "==0.3.8" },
-    { name = "natrix", specifier = "==0.1.6" },
+    { name = "natrix", specifier = "==0.1.9" },
     { name = "pre-commit", specifier = ">=4.2.0" },
     { name = "titanoboa", specifier = "==0.2.7" },
     { name = "vyper", specifier = "==0.4.3" },
