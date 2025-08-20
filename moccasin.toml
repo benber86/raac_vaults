@@ -7,7 +7,7 @@ version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12"
-dependencies = ["snekmate"]
+dependencies = ["pcaversaccio/snekmate@0.1.1"]
 default_network_name = "mainnet-fork"
 
 
@@ -59,3 +59,10 @@ abi_from_explorer = true
 [networks.mainnet-fork.contracts.pyusd_crvusd_pool]
 address = "0x625E92624Bc2D88619ACCc1788365A69767f6200"
 abi_from_explorer = true
+
+[tool.isort]
+profile = "black"
+
+[tool.natrix]
+files = ["src/"]
+disabled_rules = ["NTX4", "NTX9", "NTX5"]

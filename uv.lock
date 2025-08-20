@@ -960,7 +960,7 @@ wheels = [
 
 [[package]]
 name = "moccasin"
-version = "0.4.0"
+version = "0.3.8"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "ipykernel" },
@@ -975,9 +975,9 @@ dependencies = [
     { name = "uv" },
     { name = "vyper" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/ba/de/8234cf1b537f7103e12f63e7259f01fec3ce44d6616565cd18df1d60196a/moccasin-0.4.0.tar.gz", hash = "sha256:f8d58bc7e1f73e07b628950e4d39d0c8f895489f0c44134eab036ea4054c5530", size = 641146 }
+sdist = { url = "https://files.pythonhosted.org/packages/a4/38/b4b969da9d8171660d2050ba083284c8b557f84e4270fd5227fc2ef09b7c/moccasin-0.3.8.tar.gz", hash = "sha256:56af3776882f347137e9149be47ce9169311414b7061a3a669c860bdb461d3a6", size = 627766 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/e7/cd/dba52cfc32b3b4cca4e9a9064335168ac4777f9ed582665d614c33f5f119/moccasin-0.4.0-py3-none-any.whl", hash = "sha256:f52f70c114e80a918426b09eea2098e83cde5bfceced61f9fdb58eb9825fc35e", size = 70966 },
+    { url = "https://files.pythonhosted.org/packages/5e/19/18a75ad2d7545c29bf18a6f7095ecd0fb79f1e6f2f97cd813df4a0a3d636/moccasin-0.3.8-py3-none-any.whl", hash = "sha256:54ddaf6417fcabb908f9c835d477d33c29ad1a8d54aa0d62c52e5e975051d684", size = 65912 },
 ]
 
 [[package]]
@@ -1480,7 +1480,7 @@ requires-dist = [
     { name = "black", specifier = ">=25.1.0" },
     { name = "eth-utils", specifier = ">=5.3.0" },
     { name = "mamushi", specifier = ">=0.0.5" },
-    { name = "moccasin", specifier = ">=0.4.0" },
+    { name = "moccasin", specifier = "==0.3.8" },
     { name = "natrix", specifier = "==0.1.6" },
     { name = "pre-commit", specifier = ">=4.2.0" },
     { name = "vyper", specifier = "==0.4.1" },
