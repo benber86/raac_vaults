@@ -9,7 +9,7 @@ dependencies = [
     "eth-utils>=5.3.0",
     "mamushi>=0.0.5",
     "moccasin==0.3.8",
-    "natrix==0.1.6",
+    "natrix==0.1.9",
     "pre-commit>=4.2.0",
     "titanoboa==0.2.7",
     "vyper==0.4.3",
