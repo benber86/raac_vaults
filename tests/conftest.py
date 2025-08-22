@@ -10,7 +10,7 @@ from moccasin.moccasin_account import MoccasinAccount
 
 from src import factory, raac_vault, strategy
 from src.harvesters import cow_harvester, curve_harvester
-from src.hooks import add_liquidity, handle_extra_rewards
+from src.hooks import add_liquidity, add_liquidity_ng, handle_extra_rewards
 from tests.utils.abis import (
     BASE_REWARD_POOL_ABI,
     CONVEX_STASH_ABI,
@@ -31,6 +31,7 @@ ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
 # Pool name constants for parametrization
 PYUSD_POOL_NAME = "pyusd"
 USDC_POOL_NAME = "usdc"
+USDT_POOL_NAME = "usdt"
 
 
 @pytest.fixture(scope="session")
@@ -54,11 +55,6 @@ def cvx_token() -> VyperContract:
 
 
 @pytest.fixture(scope="session")
-def pyusd_token() -> VyperContract:
-    return get_config().get_active_network().manifest_named("pyusd_token")
-
-
-@pytest.fixture(scope="session")
 def cvx_eth_pool() -> VyperContract:
     return get_config().get_active_network().manifest_named("cvx_eth_pool")
 
@@ -71,22 +67,30 @@ def tri_crv_pool() -> VyperContract:
 @pytest.fixture(scope="session")
 def pyusd_pool() -> VyperContract:
     return ABIContractFactory("CurvePool", CURVE_STABLESWAP_NG_ABI).at(
-        CRVUSD_POOLS["pyusd"]["pool_address"]
+        CRVUSD_POOLS[PYUSD_POOL_NAME]["pool_address"]
     )
 
 
 @pytest.fixture(scope="session")
 def usdc_pool() -> VyperContract:
     return ABIContractFactory("CurvePool", CURVE_STABLESWAP_ABI).at(
-        CRVUSD_POOLS["usdc"]["pool_address"]
+        CRVUSD_POOLS[USDC_POOL_NAME]["pool_address"]
     )
 
 
 @pytest.fixture(scope="session")
-def pool_list(pyusd_pool, usdc_pool):
+def usdt_pool() -> VyperContract:
+    return ABIContractFactory("CurvePool", CURVE_STABLESWAP_ABI).at(
+        CRVUSD_POOLS[USDT_POOL_NAME]["pool_address"]
+    )
+
+
+@pytest.fixture(scope="session")
+def pool_list(pyusd_pool, usdc_pool, usdt_pool):
     return {
         PYUSD_POOL_NAME: pyusd_pool,
         USDC_POOL_NAME: usdc_pool,
+        USDT_POOL_NAME: usdt_pool,
     }
 
 
@@ -117,8 +121,6 @@ def add_liquidity_hook():
 
 @pytest.fixture(scope="session")
 def add_liquidity_ng_hook():
-    from src.hooks import add_liquidity_ng
-
     return add_liquidity_ng.deploy()
 
 
@@ -244,10 +246,21 @@ def usdc_vault(deploy_permissioned_vault_for_pool, add_liquidity_hook):
 
 
 @pytest.fixture(scope="module")
-def vault_list(pyusd_vault, usdc_vault):
+def usdt_vault(deploy_permissioned_vault_for_pool, add_liquidity_hook):
+    vault_addr, strategy_addr, harvester_addr = (
+        deploy_permissioned_vault_for_pool(
+            USDT_POOL_NAME, target_hook=add_liquidity_hook.address
+        )
+    )
+    return vault_addr, strategy_addr, harvester_addr
+
+
+@pytest.fixture(scope="module")
+def vault_list(pyusd_vault, usdc_vault, usdt_vault):
     return {
         PYUSD_POOL_NAME: pyusd_vault,
         USDC_POOL_NAME: usdc_vault,
+        USDT_POOL_NAME: usdt_vault,
     }
 
 
@@ -303,6 +316,22 @@ def usdc_extra_rewards_vault(
     vault_addr, strategy_addr, harvester_addr = (
         deploy_permissioned_vault_for_pool(
             USDC_POOL_NAME,
+            extra_reward_hook=handle_extra_rewards_hook,
+            target_hook=add_liquidity_hook.address,
+        )
+    )
+    return vault_addr, strategy_addr, harvester_addr
+
+
+@pytest.fixture(scope="module")
+def usdt_extra_rewards_vault(
+    deploy_permissioned_vault_for_pool,
+    handle_extra_rewards_hook,
+    add_liquidity_hook,
+):
+    vault_addr, strategy_addr, harvester_addr = (
+        deploy_permissioned_vault_for_pool(
+            USDT_POOL_NAME,
             extra_reward_hook=handle_extra_rewards_hook,
             target_hook=add_liquidity_hook.address,
         )
@@ -382,10 +411,19 @@ def usdc_cow_vault(deploy_cow_vault_for_pool, add_liquidity_hook):
 
 
 @pytest.fixture(scope="module")
-def cow_vault_list(pyusd_cow_vault, usdc_cow_vault):
+def usdt_cow_vault(deploy_cow_vault_for_pool, add_liquidity_hook):
+    vault_addr, strategy_addr, harvester_addr = deploy_cow_vault_for_pool(
+        USDT_POOL_NAME, target_hook=add_liquidity_hook.address
+    )
+    return vault_addr, strategy_addr, harvester_addr
+
+
+@pytest.fixture(scope="module")
+def cow_vault_list(pyusd_cow_vault, usdc_cow_vault, usdt_cow_vault):
     return {
         PYUSD_POOL_NAME: pyusd_cow_vault,
         USDC_POOL_NAME: usdc_cow_vault,
+        USDT_POOL_NAME: usdt_cow_vault,
     }
 
 

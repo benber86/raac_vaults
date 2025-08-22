@@ -44,10 +44,6 @@ abi_from_explorer = true
 address = "0x4e3FBD56CD56c3e72c1403e103b45Db9da5B9D2B"
 abi_from_explorer = true
 
-[networks.mainnet-fork.contracts.pyusd_token]
-address = "0x6c3ea9036406852006290770BEdFcAbA0e23A0e8"
-abi_from_explorer = true
-
 [networks.mainnet-fork.contracts.cvx_eth_pool]
 address = "0xB576491F1E6e5E62f1d8F26062Ee822B40B0E0d4"
 abi_from_explorer = true
