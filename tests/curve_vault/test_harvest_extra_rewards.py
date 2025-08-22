@@ -5,7 +5,7 @@ from eth_utils import function_signature_to_4byte_selector
 from src import raac_vault
 from tests.conftest import ZERO_ADDRESS
 from tests.utils.constants import (
-    CRVUSD_INDEX_PYUSD_POOL,
+    CRVUSD_POOLS,
     CRVUSD_TOKEN,
     CURVE_TRICRV_POOL,
     RSUP_TOKEN,
@@ -20,9 +20,10 @@ def test_vault_harvest_single_staker_with_extra_rewards(
     funded_accounts,
     pyusd_crvusd_pool,
     get_base_reward_pool,
-    set_up_extra_rewards_for_pyusd_pool,
+    set_up_extra_rewards_for_pool,
     treasury,
     harvest_manager,
+    current_pool,
 ):
     vault_addr, strategy_addr, harvester_addr = (
         test_extra_rewards_permissioned_vault
@@ -39,7 +40,7 @@ def test_vault_harvest_single_staker_with_extra_rewards(
         vault_contract.deposit(deposit_amount, user)
 
     # Set up extra rewards
-    set_up_extra_rewards_for_pyusd_pool()
+    set_up_extra_rewards_for_pool()
 
     initial_total_assets = vault_contract.totalAssets()
 
@@ -55,7 +56,7 @@ def test_vault_harvest_single_staker_with_extra_rewards(
         [
             pyusd_crvusd_pool.address,
             crvusd_token.address,
-            CRVUSD_INDEX_PYUSD_POOL,
+            CRVUSD_POOLS[current_pool]["crvusd_index"],
             0,
         ],
     )

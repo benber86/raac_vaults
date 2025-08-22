@@ -3,7 +3,7 @@ import pytest
 from src import raac_vault, strategy
 from src.harvesters import curve_harvester
 from tests.conftest import ZERO_ADDRESS
-from tests.utils.constants import PYUSD_BOOSTER_ID
+from tests.utils.constants import CRVUSD_POOLS
 
 
 @pytest.mark.parametrize(
@@ -24,6 +24,7 @@ def test_vault_deployment_with_hooks(
     target_hook,
     pyusd_crvusd_pool,
     treasury,
+    current_pool,
 ):
     def resolve_hook(hook_param):
         if hook_param == "add_liquidity_hook":
@@ -36,7 +37,7 @@ def test_vault_deployment_with_hooks(
 
     vault_address, strategy_address, harvester_address = (
         vault_factory.deploy_new_vault(
-            PYUSD_BOOSTER_ID,
+            CRVUSD_POOLS[current_pool]["booster_id"],
             harvest_manager,
             strategy_manager,
             extra_hook_addr,
@@ -58,7 +59,7 @@ def test_vault_deployment_with_hooks(
     assert rec.vault == vault_address
     assert rec.strategy == strategy_address
     assert rec.harvester == harvester_address
-    assert rec.booster_id == PYUSD_BOOSTER_ID
+    assert rec.booster_id == CRVUSD_POOLS[current_pool]["booster_id"]
     assert rec.token != ZERO_ADDRESS
 
     assert strategy_contract.vault() == vault_address
@@ -72,7 +73,9 @@ def test_vault_deployment_with_hooks(
     assert harvester_contract.extra_reward_hook() == extra_hook_addr
     assert harvester_contract.target_hook() == target_hook_addr
 
-    assert vault_contract.symbol() == str(PYUSD_BOOSTER_ID)
+    assert vault_contract.symbol() == str(
+        CRVUSD_POOLS[current_pool]["booster_id"]
+    )
     assert vault_contract.name() == "RAAC " + pyusd_crvusd_pool.name()[:20]
 
 
