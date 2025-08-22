@@ -27,6 +27,9 @@ from tests.utils.constants import (
 
 ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
 
+# Pool name constants for parametrization
+PYUSD_POOL_NAME = "pyusd"
+
 
 @pytest.fixture(scope="session")
 def convex_booster() -> VyperContract:
@@ -64,20 +67,22 @@ def tri_crv_pool() -> VyperContract:
 
 
 @pytest.fixture(scope="session")
-def current_pool():
-    return "pyusd"
-
-
-@pytest.fixture(scope="session")
-def pool_list():
-    return ["pyusd"]
-
-
-@pytest.fixture(scope="session")
-def crvusd_pool(current_pool) -> VyperContract:
+def pyusd_pool() -> VyperContract:
     return ABIContractFactory("CurvePool", CURVE_STABLESWAP_ABI).at(
-        CRVUSD_POOLS[current_pool]["pool_address"]
+        CRVUSD_POOLS["pyusd"]["pool_address"]
     )
+
+
+@pytest.fixture(scope="session")
+def pool_list(pyusd_pool):
+    return {
+        PYUSD_POOL_NAME: pyusd_pool,
+    }
+
+
+@pytest.fixture(scope="session")
+def crvusd_pool(pyusd_pool) -> VyperContract:
+    return pyusd_pool
 
 
 @pytest.fixture(scope="session")
@@ -140,20 +145,18 @@ def accounts():
 
 
 @pytest.fixture(scope="function")
-def funded_accounts(
-    accounts, crvusd_token, crvusd_minter, crvusd_pool, current_pool
-):
+def funded_accounts(accounts, crvusd_token, crvusd_minter, pool_list):
     for user in accounts:
         with boa.env.prank(crvusd_minter):
-            crvusd_token.mint(user, int(100_000 * 1e18))
+            crvusd_token.mint(user, int(100_000 * len(pool_list) * 1e18))
 
         amount = int(50_000 * 1e18)
-        with boa.env.prank(user):
-            crvusd_token.approve(crvusd_pool.address, amount)
-            # Create amounts array with crvUSD in the correct index
-            amounts = [0, 0]
-            amounts[CRVUSD_POOLS[current_pool]["crvusd_index"]] = amount
-            crvusd_pool.add_liquidity(amounts, 0)
+        for pool_name, pool_contract in pool_list.items():
+            with boa.env.prank(user):
+                crvusd_token.approve(pool_contract.address, amount)
+                amounts = [0, 0]
+                amounts[CRVUSD_POOLS[pool_name]["crvusd_index"]] = amount
+                pool_contract.add_liquidity(amounts, 0)
 
     return accounts
 
@@ -175,14 +178,15 @@ def vault_factory(
 
 @pytest.fixture(scope="session")
 def deploy_permissioned_vault_for_pool(
-    vault_factory, harvest_manager, strategy_manager, current_pool
-) -> Callable[[str, str], tuple]:
+    vault_factory, harvest_manager, strategy_manager
+) -> Callable[[str, str, str], tuple]:
     def inner(
+        pool_name: str,
         extra_reward_hook: str = ZERO_ADDRESS,
         target_hook: str = ZERO_ADDRESS,
     ) -> tuple:
         return vault_factory.deploy_new_vault(
-            CRVUSD_POOLS[current_pool]["booster_id"],
+            CRVUSD_POOLS[pool_name]["booster_id"],
             harvest_manager,
             strategy_manager,
             extra_reward_hook,
@@ -208,28 +212,30 @@ def test_permissioned_vault(
 ):
     vault_addr, strategy_addr, harvester_addr = (
         deploy_permissioned_vault_for_pool(
-            target_hook=add_liquidity_hook.address
+            "pyusd", target_hook=add_liquidity_hook.address
         )
     )
     return vault_addr, strategy_addr, harvester_addr
 
 
 @pytest.fixture(scope="module")
-def set_up_extra_rewards_for_pool(get_base_reward_pool, current_pool):
+def set_up_extra_rewards_for_pool(get_base_reward_pool, pool_list):
     def inner(delay=0):
         if delay > 0:
             boa.env.time_travel(seconds=delay)
-        stash = ABIContractFactory("StashV3", CONVEX_STASH_ABI).at(
-            CRVUSD_POOLS[current_pool]["convex_stash"]
-        )
-        with boa.env.prank(CONVEX_BOOSTER_OWNER):
-            stash.setExtraReward(RSUP_TOKEN)
-        with boa.env.prank(RSUP_STAKER_CONTRACT):
-            ABIContractFactory("ERC20", ERC20_ABI).at(RSUP_TOKEN).transfer(
-                stash, int(1_000_000 * 1e18)
+
+        for pool_name in pool_list.keys():
+            stash = ABIContractFactory("StashV3", CONVEX_STASH_ABI).at(
+                CRVUSD_POOLS[pool_name]["convex_stash"]
             )
-        with boa.env.prank(CONVEX_BOOSTER):
-            stash.processStash()
+            with boa.env.prank(CONVEX_BOOSTER_OWNER):
+                stash.setExtraReward(RSUP_TOKEN)
+            with boa.env.prank(RSUP_STAKER_CONTRACT):
+                ABIContractFactory("ERC20", ERC20_ABI).at(RSUP_TOKEN).transfer(
+                    stash, int(1_000_000 * 1e18)
+                )
+            with boa.env.prank(CONVEX_BOOSTER):
+                stash.processStash()
 
     return inner
 
@@ -242,6 +248,7 @@ def test_extra_rewards_permissioned_vault(
 ):
     vault_addr, strategy_addr, harvester_addr = (
         deploy_permissioned_vault_for_pool(
+            "pyusd",
             extra_reward_hook=handle_extra_rewards_hook,
             target_hook=add_liquidity_hook.address,
         )
@@ -271,14 +278,15 @@ def cow_vault_factory(
 
 @pytest.fixture(scope="session")
 def deploy_cow_vault_for_pool(
-    cow_vault_factory, harvest_manager, strategy_manager, current_pool
-) -> Callable[[str, str], tuple]:
+    cow_vault_factory, harvest_manager, strategy_manager
+) -> Callable[[str, str, str], tuple]:
     def inner(
+        pool_name: str,
         extra_reward_hook: str = ZERO_ADDRESS,
         target_hook: str = ZERO_ADDRESS,
     ) -> tuple:
         return cow_vault_factory.deploy_new_vault(
-            CRVUSD_POOLS[current_pool]["booster_id"],
+            CRVUSD_POOLS[pool_name]["booster_id"],
             harvest_manager,
             strategy_manager,
             extra_reward_hook,
@@ -291,6 +299,6 @@ def deploy_cow_vault_for_pool(
 @pytest.fixture(scope="module")
 def test_cow_vault(deploy_cow_vault_for_pool, add_liquidity_hook):
     vault_addr, strategy_addr, harvester_addr = deploy_cow_vault_for_pool(
-        target_hook=add_liquidity_hook.address
+        "pyusd", target_hook=add_liquidity_hook.address
     )
     return vault_addr, strategy_addr, harvester_addr

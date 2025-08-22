@@ -1,18 +1,21 @@
 import boa
+import pytest
 from boa.contracts.abi.abi_contract import ABIContractFactory
 from boa.util.abi import abi_encode
 from eth_utils import function_signature_to_4byte_selector
 
 from src import raac_vault, strategy
 from src.harvesters import cow_harvester
+from tests.conftest import PYUSD_POOL_NAME
 from tests.utils.abis import COMPOSABLE_COW_ABI
 from tests.utils.constants import CRVUSD_POOLS, CURVE_TRICRV_POOL
 
 
+@pytest.mark.parametrize("pool_name", [PYUSD_POOL_NAME])
 def test_cow_harvester_workflow(
     test_cow_vault,
     funded_accounts,
-    crvusd_pool,
+    pool_list,
     crvusd_token,
     crvusd_minter,
     crv_token,
@@ -20,8 +23,9 @@ def test_cow_harvester_workflow(
     treasury,
     add_liquidity_hook,
     harvest_manager,
-    current_pool,
+    pool_name,
 ):
+    crvusd_pool = pool_list[pool_name]
     vault_addr, strategy_addr, harvester_addr = test_cow_vault
     user = funded_accounts[0]
 
@@ -44,7 +48,7 @@ def test_cow_harvester_workflow(
 
     # 1. First harvest - creates orders but no immediate rewards
     target_hook_calldata = _prepare_target_hook_calldata(
-        crvusd_pool.address, crvusd_token.address, current_pool
+        crvusd_pool.address, crvusd_token.address, pool_name
     )
 
     buy_amounts = [int(1 * 1e18), int(5 * 1e18)]  # Minimum crvUSD expected
@@ -147,7 +151,7 @@ def test_cow_harvester_workflow(
 
 
 def _prepare_target_hook_calldata(
-    pool_address: str, token_address: str, current_pool: str
+    pool_address: str, token_address: str, pool_name: str
 ) -> bytes:
 
     target_sig = "add_liquidity(address,address,uint256,uint256)"
@@ -157,7 +161,7 @@ def _prepare_target_hook_calldata(
         [
             pool_address,
             token_address,
-            CRVUSD_POOLS[current_pool]["crvusd_index"],
+            CRVUSD_POOLS[pool_name]["crvusd_index"],
             0,
         ],
     )
