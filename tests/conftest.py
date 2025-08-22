@@ -74,7 +74,7 @@ def pool_list():
 
 
 @pytest.fixture(scope="session")
-def pyusd_crvusd_pool(current_pool) -> VyperContract:
+def crvusd_pool(current_pool) -> VyperContract:
     return ABIContractFactory("CurvePool", CURVE_STABLESWAP_ABI).at(
         CRVUSD_POOLS[current_pool]["pool_address"]
     )
@@ -140,15 +140,20 @@ def accounts():
 
 
 @pytest.fixture(scope="function")
-def funded_accounts(accounts, crvusd_token, crvusd_minter, pyusd_crvusd_pool):
+def funded_accounts(
+    accounts, crvusd_token, crvusd_minter, crvusd_pool, current_pool
+):
     for user in accounts:
         with boa.env.prank(crvusd_minter):
             crvusd_token.mint(user, int(100_000 * 1e18))
 
         amount = int(50_000 * 1e18)
         with boa.env.prank(user):
-            crvusd_token.approve(pyusd_crvusd_pool.address, amount)
-            pyusd_crvusd_pool.add_liquidity([0, amount], 0)
+            crvusd_token.approve(crvusd_pool.address, amount)
+            # Create amounts array with crvUSD in the correct index
+            amounts = [0, 0]
+            amounts[CRVUSD_POOLS[current_pool]["crvusd_index"]] = amount
+            crvusd_pool.add_liquidity(amounts, 0)
 
     return accounts
 
