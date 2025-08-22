@@ -22,7 +22,7 @@ def test_vault_deployment_with_hooks(
     add_liquidity_hook,
     extra_reward_hook,
     target_hook,
-    pyusd_crvusd_pool,
+    crvusd_pool,
     treasury,
     current_pool,
 ):
@@ -76,7 +76,7 @@ def test_vault_deployment_with_hooks(
     assert vault_contract.symbol() == str(
         CRVUSD_POOLS[current_pool]["booster_id"]
     )
-    assert vault_contract.name() == "RAAC " + pyusd_crvusd_pool.name()[:20]
+    assert vault_contract.name() == "RAAC " + crvusd_pool.name()[:20]
 
 
 def test_vault_deployment_reverts_for_large_booster_id(

@@ -18,7 +18,7 @@ def test_vault_harvest_single_staker_with_extra_rewards(
     test_extra_rewards_permissioned_vault,
     crvusd_token,
     funded_accounts,
-    pyusd_crvusd_pool,
+    crvusd_pool,
     get_base_reward_pool,
     set_up_extra_rewards_for_pool,
     treasury,
@@ -32,11 +32,11 @@ def test_vault_harvest_single_staker_with_extra_rewards(
 
     vault_contract = raac_vault.at(vault_addr)
 
-    user_lp_balance = pyusd_crvusd_pool.balanceOf(user)
+    user_lp_balance = crvusd_pool.balanceOf(user)
     deposit_amount = user_lp_balance // 2
 
     with boa.env.prank(user):
-        pyusd_crvusd_pool.approve(vault_addr, deposit_amount)
+        crvusd_pool.approve(vault_addr, deposit_amount)
         vault_contract.deposit(deposit_amount, user)
 
     # Set up extra rewards
@@ -54,7 +54,7 @@ def test_vault_harvest_single_staker_with_extra_rewards(
     target_encoded_args = abi_encode(
         "(address,address,uint256,uint256)",
         [
-            pyusd_crvusd_pool.address,
+            crvusd_pool.address,
             crvusd_token.address,
             CRVUSD_POOLS[current_pool]["crvusd_index"],
             0,

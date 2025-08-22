@@ -12,7 +12,7 @@ from tests.utils.constants import CRVUSD_POOLS, CURVE_TRICRV_POOL
 def test_cow_harvester_workflow(
     test_cow_vault,
     funded_accounts,
-    pyusd_crvusd_pool,
+    crvusd_pool,
     crvusd_token,
     crvusd_minter,
     crv_token,
@@ -29,11 +29,11 @@ def test_cow_harvester_workflow(
     harvester_contract = cow_harvester.at(harvester_addr)
 
     # 1. User deposits into vault
-    user_lp_balance = pyusd_crvusd_pool.balanceOf(user)
+    user_lp_balance = crvusd_pool.balanceOf(user)
     deposit_amount = user_lp_balance // 2
 
     with boa.env.prank(user):
-        pyusd_crvusd_pool.approve(vault_addr, deposit_amount)
+        crvusd_pool.approve(vault_addr, deposit_amount)
         vault_contract.deposit(deposit_amount, user)
 
     initial_total_assets = vault_contract.totalAssets()
@@ -44,7 +44,7 @@ def test_cow_harvester_workflow(
 
     # 1. First harvest - creates orders but no immediate rewards
     target_hook_calldata = _prepare_target_hook_calldata(
-        pyusd_crvusd_pool.address, crvusd_token.address, current_pool
+        crvusd_pool.address, crvusd_token.address, current_pool
     )
 
     buy_amounts = [int(1 * 1e18), int(5 * 1e18)]  # Minimum crvUSD expected

@@ -10,7 +10,7 @@ def test_vault_harvest_single_staker(
     test_permissioned_vault,
     crvusd_token,
     funded_accounts,
-    pyusd_crvusd_pool,
+    crvusd_pool,
     get_base_reward_pool,
     harvest_manager,
     current_pool,
@@ -22,11 +22,11 @@ def test_vault_harvest_single_staker(
     strategy_contract = strategy.at(strategy_addr)
     get_base_reward_pool(strategy_contract.rewards_contract())
 
-    user_lp_balance = pyusd_crvusd_pool.balanceOf(user)
+    user_lp_balance = crvusd_pool.balanceOf(user)
     deposit_amount = user_lp_balance // 2
 
     with boa.env.prank(user):
-        pyusd_crvusd_pool.approve(vault_addr, deposit_amount)
+        crvusd_pool.approve(vault_addr, deposit_amount)
         vault_contract.deposit(deposit_amount, user)
 
     initial_total_assets = vault_contract.totalAssets()
@@ -38,7 +38,7 @@ def test_vault_harvest_single_staker(
     encoded_args = abi_encode(
         "(address,address,uint256,uint256)",
         [
-            pyusd_crvusd_pool.address,
+            crvusd_pool.address,
             crvusd_token.address,
             CRVUSD_POOLS[current_pool]["crvusd_index"],
             0,
@@ -57,7 +57,7 @@ def test_vault_harvest_multiple_stakers(
     test_permissioned_vault,
     crvusd_token,
     funded_accounts,
-    pyusd_crvusd_pool,
+    crvusd_pool,
     get_base_reward_pool,
     harvest_manager,
     current_pool,
@@ -70,11 +70,11 @@ def test_vault_harvest_multiple_stakers(
 
     user_deposits = {}
     for i, user in enumerate(funded_accounts[:3]):
-        user_lp_balance = pyusd_crvusd_pool.balanceOf(user)
+        user_lp_balance = crvusd_pool.balanceOf(user)
         deposit_amount = user_lp_balance // 3
 
         with boa.env.prank(user):
-            pyusd_crvusd_pool.approve(vault_addr, deposit_amount)
+            crvusd_pool.approve(vault_addr, deposit_amount)
             shares_received = vault_contract.deposit(deposit_amount, user)
             user_deposits[user] = {
                 "deposit": deposit_amount,
@@ -90,7 +90,7 @@ def test_vault_harvest_multiple_stakers(
     encoded_args = abi_encode(
         "(address,address,uint256,uint256)",
         [
-            pyusd_crvusd_pool.address,
+            crvusd_pool.address,
             crvusd_token.address,
             CRVUSD_POOLS[current_pool]["crvusd_index"],
             0,
@@ -115,7 +115,7 @@ def test_vault_withdraw_after_harvest_profit(
     test_permissioned_vault,
     crvusd_token,
     funded_accounts,
-    pyusd_crvusd_pool,
+    crvusd_pool,
     get_base_reward_pool,
     harvest_manager,
     current_pool,
@@ -125,11 +125,11 @@ def test_vault_withdraw_after_harvest_profit(
 
     vault_contract = raac_vault.at(vault_addr)
 
-    user_lp_balance = pyusd_crvusd_pool.balanceOf(user)
+    user_lp_balance = crvusd_pool.balanceOf(user)
     deposit_amount = user_lp_balance // 2
 
     with boa.env.prank(user):
-        pyusd_crvusd_pool.approve(vault_addr, deposit_amount)
+        crvusd_pool.approve(vault_addr, deposit_amount)
         shares_received = vault_contract.deposit(deposit_amount, user)
 
     boa.env.time_travel(seconds=86400 * 7)
@@ -139,7 +139,7 @@ def test_vault_withdraw_after_harvest_profit(
     encoded_args = abi_encode(
         "(address,address,uint256,uint256)",
         [
-            pyusd_crvusd_pool.address,
+            crvusd_pool.address,
             crvusd_token.address,
             CRVUSD_POOLS[current_pool]["crvusd_index"],
             0,
@@ -150,13 +150,13 @@ def test_vault_withdraw_after_harvest_profit(
     with boa.env.prank(harvest_manager):
         vault_contract.harvest(user, 0, [], b"", target_hook_calldata, b"")
 
-    initial_user_lp_balance = pyusd_crvusd_pool.balanceOf(user)
+    initial_user_lp_balance = crvusd_pool.balanceOf(user)
     withdrawable_assets = vault_contract.convertToAssets(shares_received)
 
     with boa.env.prank(user):
         vault_contract.withdraw(withdrawable_assets, user, user)
 
-    final_user_lp_balance = pyusd_crvusd_pool.balanceOf(user)
+    final_user_lp_balance = crvusd_pool.balanceOf(user)
     total_received = final_user_lp_balance - initial_user_lp_balance
 
     assert total_received > deposit_amount
@@ -166,7 +166,7 @@ def test_vault_harvest_reverts_high_min_amount_out(
     test_permissioned_vault,
     crvusd_token,
     funded_accounts,
-    pyusd_crvusd_pool,
+    crvusd_pool,
     harvest_manager,
     current_pool,
 ):
@@ -175,11 +175,11 @@ def test_vault_harvest_reverts_high_min_amount_out(
 
     vault_contract = raac_vault.at(vault_addr)
 
-    user_lp_balance = pyusd_crvusd_pool.balanceOf(user)
+    user_lp_balance = crvusd_pool.balanceOf(user)
     deposit_amount = user_lp_balance // 2
 
     with boa.env.prank(user):
-        pyusd_crvusd_pool.approve(vault_addr, deposit_amount)
+        crvusd_pool.approve(vault_addr, deposit_amount)
         vault_contract.deposit(deposit_amount, user)
 
     boa.env.time_travel(seconds=86400 * 7)
@@ -189,7 +189,7 @@ def test_vault_harvest_reverts_high_min_amount_out(
     encoded_args = abi_encode(
         "(address,address,uint256,uint256)",
         [
-            pyusd_crvusd_pool.address,
+            crvusd_pool.address,
             crvusd_token.address,
             CRVUSD_POOLS[current_pool]["crvusd_index"],
             2**256 - 1,
