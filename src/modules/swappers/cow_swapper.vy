@@ -23,7 +23,6 @@
 """
 
 from ethereum.ercs import IERC20
-from ethereum.ercs import IERC165
 from src.interfaces import IStrategy
 from src.interfaces import IVault
 from src.modules import constants
@@ -31,7 +30,19 @@ from src.modules.swappers import swapper
 
 initializes: swapper
 
-exports: swapper.__interface__
+exports: (
+    swapper.extra_reward_hook,
+    swapper.factory,
+    swapper.set_extra_reward_hook,
+    swapper.set_strategy,
+    swapper.set_target_hook,
+    swapper.strategy,
+    swapper.target_hook,
+    swapper.transfer_to_reward_hook,
+    swapper.transfer_to_target_hook,
+    swapper.treasury,
+    swapper.__default__,
+)
 
 
 interface IComposableCoW:
@@ -159,13 +170,19 @@ def set_delay(delay: uint256):
 
 
 @external
-def set_approval(_token: address):
+def set_approvals():
     """
-    @notice Approve spending of a token by the cowswap vault relayer
-    @param _token The token to approve
+    @notice Set token approvals for COW Protocol vault relayer
+    @dev Approves CRV and CVX tokens for swapping via COW Protocol
     """
-    assert extcall IERC20(_token).approve(VAULT_RELAYER, 0, default_return_value=True)
-    assert extcall IERC20(_token).approve(
+    # CRV token approval
+    assert extcall IERC20(constants.CRV_TOKEN).approve(VAULT_RELAYER, 0, default_return_value=True)
+    assert extcall IERC20(constants.CRV_TOKEN).approve(
+        VAULT_RELAYER, max_value(uint256), default_return_value=True
+    )
+    # CVX token approval
+    assert extcall IERC20(constants.CVX_TOKEN).approve(VAULT_RELAYER, 0, default_return_value=True)
+    assert extcall IERC20(constants.CVX_TOKEN).approve(
         VAULT_RELAYER, max_value(uint256), default_return_value=True
     )
 
@@ -244,7 +261,9 @@ def _swap(
     target_asset_balance: uint256 = staticcall IERC20(target_asset).balanceOf(self)
     assert target_asset_balance > _min_amount_out, "Slippage"
     assert extcall IERC20(target_asset).transfer(
-        swapper.fee_collector.strategy, target_asset_balance, default_return_value=True
+        swapper.fee_collector.strategy,
+        target_asset_balance,
+        default_return_value=True,
     )
     return target_asset_balance
 
@@ -294,8 +313,8 @@ def getTradeableOrder(
     return order
 
 
-@view
 @internal
+@view
 def _verify(
     _owner: address,
     _sender: address,
@@ -338,7 +357,14 @@ def verify(
     @dev This is called by ComposableCoW to validate orders
     """
     self._verify(
-        _owner, _sender, _hash, _domain_separator, _ctx, _static_input, _offchain_input, _order
+        _owner,
+        _sender,
+        _hash,
+        _domain_separator,
+        _ctx,
+        _static_input,
+        _offchain_input,
+        _order,
     )
 
 
@@ -402,8 +428,8 @@ def isValidSignature(_hash: bytes32, _signature: Bytes[2048]) -> bytes4:
     )
 
 
-@pure
 @external
+@pure
 def supportsInterface(_interface_id: bytes4) -> bool:
     """
     @notice Check if this contract supports a given interface

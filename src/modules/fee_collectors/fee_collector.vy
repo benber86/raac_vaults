@@ -33,14 +33,14 @@ def __init__(_factory: address):
     factory = _factory
 
 
-@view
 @external
+@view
 def treasury() -> address:
     return self._treasury()
 
 
-@view
 @internal
+@view
 def _treasury() -> address:
     return staticcall IVaultFactory(factory).treasury()
 
@@ -58,6 +58,7 @@ def set_strategy(_strategy: address):
 
 
 @internal
+@view
 def _calc_cvx_value_in_eth(_amount: uint256) -> uint256:
     """
     @notice Calculate the ETH value of a given CVX amount using a Curve pool oracle
@@ -69,6 +70,7 @@ def _calc_cvx_value_in_eth(_amount: uint256) -> uint256:
 
 
 @internal
+@view
 def _calc_crv_value_in_eth(_amount: uint256) -> uint256:
     """
     @notice Calculate the ETH value of a given CRV amount using the Curve TriCrypto pool oracle
@@ -88,6 +90,7 @@ def _calc_crv_value_in_eth(_amount: uint256) -> uint256:
 
 
 @internal
+@view
 def _calculate_fee_split() -> (uint256, uint256, uint256, uint256, uint256):
     """
     @notice Calculate how much CVX and CRV to take as platform fees
@@ -155,7 +158,7 @@ def _collect() -> (uint256, uint256, uint256):
     cvx_net: uint256 = 0
     eth_net_value: uint256 = 0
     treasury: address = self._treasury()
-    cvx_net, crv_net, cvx_fee, crv_fee, eth_net_value = self._calculate_fee_split()
+    (cvx_net, crv_net, cvx_fee, crv_fee, eth_net_value) = self._calculate_fee_split()
     # Transfer fees to fee recipient
     if cvx_fee > 0:
         assert extcall IERC20(constants.CVX_TOKEN).transfer(treasury, cvx_fee)

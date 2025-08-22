@@ -3,7 +3,9 @@
 
 @external
 def add_liquidity(
-    _amounts: DynArray[uint256, 8], _min_mint_amount: uint256, _receiver: address
+    _amounts: DynArray[uint256, 8],
+    _min_mint_amount: uint256,
+    _receiver: address,
 ) -> uint256:
     ...
 

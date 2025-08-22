@@ -1,8 +1,8 @@
 # pragma version 0.4.3
 # @license MIT
 
-@pure
 @internal
+@pure
 def uint_to_str5(_number: uint256) -> String[5]:
     """
     @notice Turns a 5 or less digit uint256 into its string representation

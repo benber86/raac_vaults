@@ -1037,11 +1037,7 @@ wheels = [
 [[package]]
 name = "natrix"
 version = "0.1.9"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/41/a8/7bded232de2ade2e2aad22abcc4a1612e6ca4732b4cd59c7c8778f96dedc/natrix-0.1.9.tar.gz", hash = "sha256:4c502f330fbb8c0bc63ba843c591ed73118eef4f853a0769b757305145b91e8f", size = 102556 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/24/19/8908c6b4b9f14bbabad059c23f145edb40893ae58d6547e4b2e228d13817/natrix-0.1.9-py3-none-any.whl", hash = "sha256:c9930c7ac1cfecb28a1cde461eaa94aef7e8ebef53e3567cc58885260bc1785a", size = 38675 },
-]
+source = { git = "https://github.com/benber86/natrix.git?rev=cab43666d7f10f30750aa6e52725de53cd451858#cab43666d7f10f30750aa6e52725de53cd451858" }
 
 [[package]]
 name = "nest-asyncio"
@@ -1534,7 +1530,7 @@ requires-dist = [
     { name = "eth-utils", specifier = ">=5.3.0" },
     { name = "mamushi", specifier = ">=0.0.5" },
     { name = "moccasin", specifier = "==0.3.8" },
-    { name = "natrix", specifier = "==0.1.9" },
+    { name = "natrix", git = "https://github.com/benber86/natrix.git?rev=cab43666d7f10f30750aa6e52725de53cd451858" },
     { name = "pre-commit", specifier = ">=4.2.0" },
     { name = "titanoboa", specifier = "==0.2.7" },
     { name = "vyper", specifier = "==0.4.3" },
