@@ -3,7 +3,7 @@ from boa.util.abi import abi_encode
 from eth_utils import function_signature_to_4byte_selector
 
 from src import raac_vault, strategy
-from tests.utils.constants import CRVUSD_INDEX_PYUSD_POOL
+from tests.utils.constants import CRVUSD_POOLS
 
 
 def test_vault_harvest_single_staker(
@@ -13,6 +13,7 @@ def test_vault_harvest_single_staker(
     pyusd_crvusd_pool,
     get_base_reward_pool,
     harvest_manager,
+    current_pool,
 ):
     vault_addr, strategy_addr, harvester_addr = test_permissioned_vault
     user = funded_accounts[0]
@@ -39,7 +40,7 @@ def test_vault_harvest_single_staker(
         [
             pyusd_crvusd_pool.address,
             crvusd_token.address,
-            CRVUSD_INDEX_PYUSD_POOL,
+            CRVUSD_POOLS[current_pool]["crvusd_index"],
             0,
         ],
     )
@@ -59,6 +60,7 @@ def test_vault_harvest_multiple_stakers(
     pyusd_crvusd_pool,
     get_base_reward_pool,
     harvest_manager,
+    current_pool,
 ):
     vault_addr, strategy_addr, harvester_addr = test_permissioned_vault
 
@@ -90,7 +92,7 @@ def test_vault_harvest_multiple_stakers(
         [
             pyusd_crvusd_pool.address,
             crvusd_token.address,
-            CRVUSD_INDEX_PYUSD_POOL,
+            CRVUSD_POOLS[current_pool]["crvusd_index"],
             0,
         ],
     )
@@ -116,6 +118,7 @@ def test_vault_withdraw_after_harvest_profit(
     pyusd_crvusd_pool,
     get_base_reward_pool,
     harvest_manager,
+    current_pool,
 ):
     vault_addr, strategy_addr, harvester_addr = test_permissioned_vault
     user = funded_accounts[0]
@@ -138,7 +141,7 @@ def test_vault_withdraw_after_harvest_profit(
         [
             pyusd_crvusd_pool.address,
             crvusd_token.address,
-            CRVUSD_INDEX_PYUSD_POOL,
+            CRVUSD_POOLS[current_pool]["crvusd_index"],
             0,
         ],
     )
@@ -165,6 +168,7 @@ def test_vault_harvest_reverts_high_min_amount_out(
     funded_accounts,
     pyusd_crvusd_pool,
     harvest_manager,
+    current_pool,
 ):
     vault_addr, strategy_addr, harvester_addr = test_permissioned_vault
     user = funded_accounts[0]
@@ -187,7 +191,7 @@ def test_vault_harvest_reverts_high_min_amount_out(
         [
             pyusd_crvusd_pool.address,
             crvusd_token.address,
-            CRVUSD_INDEX_PYUSD_POOL,
+            CRVUSD_POOLS[current_pool]["crvusd_index"],
             2**256 - 1,
         ],
     )

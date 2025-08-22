@@ -11,12 +11,16 @@ from moccasin.moccasin_account import MoccasinAccount
 from src import factory, raac_vault, strategy
 from src.harvesters import cow_harvester, curve_harvester
 from src.hooks import add_liquidity, handle_extra_rewards
-from tests.utils.abis import BASE_REWARD_POOL_ABI, CONVEX_STASH_ABI, ERC20_ABI
+from tests.utils.abis import (
+    BASE_REWARD_POOL_ABI,
+    CONVEX_STASH_ABI,
+    CURVE_STABLESWAP_ABI,
+    ERC20_ABI,
+)
 from tests.utils.constants import (
     CONVEX_BOOSTER,
     CONVEX_BOOSTER_OWNER,
-    PYUSD_BOOSTER_ID,
-    PYUSD_CONVEX_STASH,
+    CRVUSD_POOLS,
     RSUP_STAKER_CONTRACT,
     RSUP_TOKEN,
 )
@@ -60,9 +64,19 @@ def tri_crv_pool() -> VyperContract:
 
 
 @pytest.fixture(scope="session")
-def pyusd_crvusd_pool() -> VyperContract:
-    return (
-        get_config().get_active_network().manifest_named("pyusd_crvusd_pool")
+def current_pool():
+    return "pyusd"
+
+
+@pytest.fixture(scope="session")
+def pool_list():
+    return ["pyusd"]
+
+
+@pytest.fixture(scope="session")
+def pyusd_crvusd_pool(current_pool) -> VyperContract:
+    return ABIContractFactory("CurvePool", CURVE_STABLESWAP_ABI).at(
+        CRVUSD_POOLS[current_pool]["pool_address"]
     )
 
 
@@ -156,15 +170,14 @@ def vault_factory(
 
 @pytest.fixture(scope="session")
 def deploy_permissioned_vault_for_pool(
-    vault_factory, harvest_manager, strategy_manager
-) -> Callable[[int, str, str], tuple]:
+    vault_factory, harvest_manager, strategy_manager, current_pool
+) -> Callable[[str, str], tuple]:
     def inner(
-        booster_id: int,
         extra_reward_hook: str = ZERO_ADDRESS,
         target_hook: str = ZERO_ADDRESS,
     ) -> tuple:
         return vault_factory.deploy_new_vault(
-            booster_id,
+            CRVUSD_POOLS[current_pool]["booster_id"],
             harvest_manager,
             strategy_manager,
             extra_reward_hook,
@@ -190,21 +203,19 @@ def test_permissioned_vault(
 ):
     vault_addr, strategy_addr, harvester_addr = (
         deploy_permissioned_vault_for_pool(
-            PYUSD_BOOSTER_ID, target_hook=add_liquidity_hook.address
+            target_hook=add_liquidity_hook.address
         )
     )
     return vault_addr, strategy_addr, harvester_addr
 
 
 @pytest.fixture(scope="module")
-def set_up_extra_rewards_for_pyusd_pool(get_base_reward_pool):
+def set_up_extra_rewards_for_pool(get_base_reward_pool, current_pool):
     def inner(delay=0):
-        # we use a delay to set up a case where no more CRV / CVX rewards
-        # rewards are usually queued for a week on Convex
         if delay > 0:
             boa.env.time_travel(seconds=delay)
         stash = ABIContractFactory("StashV3", CONVEX_STASH_ABI).at(
-            PYUSD_CONVEX_STASH
+            CRVUSD_POOLS[current_pool]["convex_stash"]
         )
         with boa.env.prank(CONVEX_BOOSTER_OWNER):
             stash.setExtraReward(RSUP_TOKEN)
@@ -226,7 +237,6 @@ def test_extra_rewards_permissioned_vault(
 ):
     vault_addr, strategy_addr, harvester_addr = (
         deploy_permissioned_vault_for_pool(
-            PYUSD_BOOSTER_ID,
             extra_reward_hook=handle_extra_rewards_hook,
             target_hook=add_liquidity_hook.address,
         )
@@ -256,15 +266,14 @@ def cow_vault_factory(
 
 @pytest.fixture(scope="session")
 def deploy_cow_vault_for_pool(
-    cow_vault_factory, harvest_manager, strategy_manager
-) -> Callable[[int, str, str], tuple]:
+    cow_vault_factory, harvest_manager, strategy_manager, current_pool
+) -> Callable[[str, str], tuple]:
     def inner(
-        booster_id: int,
         extra_reward_hook: str = ZERO_ADDRESS,
         target_hook: str = ZERO_ADDRESS,
     ) -> tuple:
         return cow_vault_factory.deploy_new_vault(
-            booster_id,
+            CRVUSD_POOLS[current_pool]["booster_id"],
             harvest_manager,
             strategy_manager,
             extra_reward_hook,
@@ -277,6 +286,6 @@ def deploy_cow_vault_for_pool(
 @pytest.fixture(scope="module")
 def test_cow_vault(deploy_cow_vault_for_pool, add_liquidity_hook):
     vault_addr, strategy_addr, harvester_addr = deploy_cow_vault_for_pool(
-        PYUSD_BOOSTER_ID, target_hook=add_liquidity_hook.address
+        target_hook=add_liquidity_hook.address
     )
     return vault_addr, strategy_addr, harvester_addr
