@@ -131,8 +131,14 @@ def _swap(
 
     crvusd_received: uint256 = self._eth_to_crvusd(self.balance, 1)
 
+    # Pay the platform fee in crvUSD to the treasury
+    platform_fee: uint256 = staticcall IStrategy(swapper.strategy).platform_fee()
+    treasury: address = swapper._treasury()
+    swapper._collect_fee(treasury, constants.CRVUSD_TOKEN, crvusd_received, platform_fee)
+
     # Pay the caller incentive in crvUSD
-    swapper._pay_out_caller_fee(_caller, constants.CRVUSD_TOKEN, crvusd_received)
+    caller_fee: uint256 = staticcall IStrategy(swapper.strategy).caller_fee()
+    swapper._collect_fee(_caller, constants.CRVUSD_TOKEN, crvusd_received, caller_fee)
 
     # if we have a hook contract to handle further operations
     if swapper.target_hook != empty(address):
@@ -142,11 +148,11 @@ def _swap(
             value=0,
         )
 
-    target_asset: address = staticcall IStrategy(swapper.fee_collector.strategy).asset()
+    target_asset: address = staticcall IStrategy(swapper.strategy).asset()
     target_asset_balance: uint256 = staticcall IERC20(target_asset).balanceOf(self)
     assert target_asset_balance > _min_amount_out, "Slippage"
     assert extcall IERC20(target_asset).transfer(
-        swapper.fee_collector.strategy,
+        swapper.strategy,
         target_asset_balance,
         default_return_value=True,
     )

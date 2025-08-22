@@ -162,7 +162,7 @@ def __init__(_factory: address):
 
 @external
 def set_delay(delay: uint256):
-    vault: IVault = IVault(staticcall IStrategy(swapper.fee_collector.strategy).vault())
+    vault: IVault = IVault(staticcall IStrategy(swapper.strategy).vault())
     assert staticcall vault.hasRole(staticcall vault.HARVESTER_ROLE(), msg.sender), "Manager only"
     assert (delay < DAY * 7), "Delay too long"
     self.delay = delay
@@ -247,7 +247,13 @@ def _swap(
     if crvusd_available == 0:
         return 0
 
-    swapper._pay_out_caller_fee(_caller, constants.CRVUSD_TOKEN, crvusd_available)
+    platform_fee: uint256 = staticcall IStrategy(swapper.strategy).platform_fee()
+    treasury: address = swapper._treasury()
+    swapper._collect_fee(treasury, constants.CRVUSD_TOKEN, crvusd_available, platform_fee)
+
+    # Pay the caller incentive in crvUSD
+    caller_fee: uint256 = staticcall IStrategy(swapper.strategy).caller_fee()
+    swapper._collect_fee(_caller, constants.CRVUSD_TOKEN, crvusd_available, caller_fee)
 
     # if we have a hook contract to handle further operations
     if swapper.target_hook != empty(address):
@@ -257,11 +263,11 @@ def _swap(
             value=0,
         )
 
-    target_asset: address = staticcall IStrategy(swapper.fee_collector.strategy).asset()
+    target_asset: address = staticcall IStrategy(swapper.strategy).asset()
     target_asset_balance: uint256 = staticcall IERC20(target_asset).balanceOf(self)
     assert target_asset_balance > _min_amount_out, "Slippage"
     assert extcall IERC20(target_asset).transfer(
-        swapper.fee_collector.strategy,
+        swapper.strategy,
         target_asset_balance,
         default_return_value=True,
     )
@@ -446,7 +452,7 @@ def cancel_order(_token: address):
     @param _token The token whose order should be cancelled
     @dev Only callable by harvest manager
     """
-    vault: IVault = IVault(staticcall IStrategy(swapper.fee_collector.strategy).vault())
+    vault: IVault = IVault(staticcall IStrategy(swapper.strategy).vault())
     assert staticcall vault.hasRole(staticcall vault.HARVESTER_ROLE(), msg.sender), "Manager only"
 
     assert self.token_orders[_token], "No order exists"

@@ -50,9 +50,8 @@ def harvest(
     @param _harvester_calldata Not needed for the curve harvester
     @return target_asset_balance Amount of target asset received
     """
-    assert curve_swapper.swapper.fee_collector.strategy != empty(address)
-    assert (msg.sender == curve_swapper.swapper.fee_collector.strategy), "Strategy only"
-    curve_swapper.swapper.fee_collector._collect()
+    assert curve_swapper.swapper.strategy != empty(address)
+    assert (msg.sender == curve_swapper.swapper.strategy), "Strategy only"
     return curve_swapper._swap(
         _caller, _min_amount_out, _reward_hook_calldata, _target_hook_calldata
     )

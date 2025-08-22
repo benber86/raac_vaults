@@ -65,9 +65,8 @@ def harvest(
                                CVX
     @return target_asset_balance Amount of target asset received
     """
-    assert cow_swapper.swapper.fee_collector.strategy != empty(address)
-    assert (msg.sender == cow_swapper.swapper.fee_collector.strategy), "Strategy only"
-    cow_swapper.swapper.fee_collector._collect()
+    assert cow_swapper.swapper.strategy != empty(address)
+    assert (msg.sender == cow_swapper.swapper.strategy), "Strategy only"
     tokens_to_swap: DynArray[address, cow_swapper.MAX_TOKENS] = [
         constants.CRV_TOKEN, constants.CVX_TOKEN
     ]
