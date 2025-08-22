@@ -12,7 +12,9 @@ def depositAll(pid: uint256, stake: bool):
 
 
 @view
-def poolInfo(id: uint256) -> (address, address, address, address, address, bool):
+def poolInfo(
+    id: uint256,
+) -> (address, address, address, address, address, bool):
     ...
 
 

@@ -17,7 +17,10 @@ CURVE_ROUTER: constant(address) = 0x45312ea0eFf7E09C83CBE249fa1d7598c4C8cd4e
 
 @external
 def process_extra_rewards(
-    _token: address, _route: address[11], _swap_params: uint256[5][5], _pools: address[5]
+    _token: address,
+    _route: address[11],
+    _swap_params: uint256[5][5],
+    _pools: address[5],
 ):
     """
     @notice Process extra reward tokens by swapping them to crvUSD via Curve Router and applying platform fees
@@ -42,7 +45,12 @@ def process_extra_rewards(
 
     # Execute swap via Curve Router
     crvusd_received: uint256 = extcall ICurveRouter(CURVE_ROUTER).exchange(
-        _route, _swap_params, amount, 0, _pools, self  # We'll handle slippage after fees
+        _route,
+        _swap_params,
+        amount,
+        0,
+        _pools,
+        self,  # We'll handle slippage after fees
     )
 
     # Apply platform fee

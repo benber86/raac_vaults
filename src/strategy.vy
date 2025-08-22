@@ -57,7 +57,10 @@ event VaultSet:
 
 @deploy
 def __init__(
-    _asset: address, _rewards_contract: address, _harvester: address, _booster_id: uint256
+    _asset: address,
+    _rewards_contract: address,
+    _harvester: address,
+    _booster_id: uint256,
 ):
     """
     @param _asset Address of the LP token this strategy will manage

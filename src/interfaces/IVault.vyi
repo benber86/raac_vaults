@@ -184,7 +184,13 @@ def DOMAIN_SEPARATOR() -> bytes32:
 @view
 @external
 def eip712Domain() -> (
-    bytes1, String[50], String[20], uint256, address, bytes32, DynArray[uint256, 32]
+    bytes1,
+    String[50],
+    String[20],
+    uint256,
+    address,
+    bytes32,
+    DynArray[uint256, 32],
 ):
     ...
 

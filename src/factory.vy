@@ -21,7 +21,6 @@ from interfaces import IVault
 from interfaces import IBooster
 from interfaces import IHarvester
 from snekmate.auth import ownable
-from . import raac_vault
 from . import strategy
 
 
@@ -66,7 +65,10 @@ vault_to_id: public(HashMap[address, uint256])
 
 @deploy
 def __init__(
-    _vault_impl: address, _strategy_impl: address, _harvester_impl: address, _treasury: address
+    _vault_impl: address,
+    _strategy_impl: address,
+    _harvester_impl: address,
+    _treasury: address,
 ):
     """
     @param _vault_impl Address of the vault implementation contract for blueprint deployment
@@ -89,14 +91,14 @@ def __init__(
 
 
 @external
-def set_treasury(new_treasury: address):
+def set_treasury(_new_treasury: address):
     """
     @notice Set a new treasury address, i.e. address that will receive the platform fees
-    @param new_treasury Treasury address
+    @param _new_treasury Treasury address
     """
     ownable._check_owner()
-    self.treasury = new_treasury
-    log TreasuryUpdated(treasury=new_treasury)
+    self.treasury = _new_treasury
+    log TreasuryUpdated(treasury=_new_treasury)
 
 
 @external
@@ -154,7 +156,11 @@ def deploy_new_vault(
     vault_symbol: String[78] = conversion.uint_to_str5(_booster_id)
 
     deployed_strategy: address = create_from_blueprint(
-        STRATEGY_IMPLEMENTATION, pool_asset, pool_reward_contract, deployed_harvester, _booster_id
+        STRATEGY_IMPLEMENTATION,
+        pool_asset,
+        pool_reward_contract,
+        deployed_harvester,
+        _booster_id,
     )
     deployed_vault: address = create_from_blueprint(
         VAULT_IMPLEMENTATION,
@@ -170,7 +176,8 @@ def deploy_new_vault(
 
     # Grant roles to managers
     extcall IVault(deployed_vault).grantRole(
-        staticcall IVault(deployed_vault).STRATEGY_MANAGER_ROLE(), _strategy_manager
+        staticcall IVault(deployed_vault).STRATEGY_MANAGER_ROLE(),
+        _strategy_manager,
     )
     extcall IVault(deployed_vault).grantRole(
         staticcall IVault(deployed_vault).HARVESTER_ROLE(), _harvest_manager

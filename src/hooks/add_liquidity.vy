@@ -15,7 +15,10 @@ MAX_COINS: constant(uint256) = 8
 
 @external
 def add_liquidity(
-    _pool_address: address, _token: address, _token_index: uint256, _min_amount_out: uint256
+    _pool_address: address,
+    _token: address,
+    _token_index: uint256,
+    _min_amount_out: uint256,
 ):
     """
     @notice Add one-sided liquidity to a Curve NG pool via this hook.

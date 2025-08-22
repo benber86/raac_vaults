@@ -10,7 +10,19 @@ from src.modules.swappers import swapper
 
 initializes: swapper
 
-exports: swapper.__interface__
+exports: (
+    swapper.extra_reward_hook,
+    swapper.factory,
+    swapper.set_extra_reward_hook,
+    swapper.set_strategy,
+    swapper.set_target_hook,
+    swapper.strategy,
+    swapper.target_hook,
+    swapper.transfer_to_reward_hook,
+    swapper.transfer_to_target_hook,
+    swapper.treasury,
+    swapper.__default__,
+)
 
 
 @deploy
@@ -134,6 +146,8 @@ def _swap(
     target_asset_balance: uint256 = staticcall IERC20(target_asset).balanceOf(self)
     assert target_asset_balance > _min_amount_out, "Slippage"
     assert extcall IERC20(target_asset).transfer(
-        swapper.fee_collector.strategy, target_asset_balance, default_return_value=True
+        swapper.fee_collector.strategy,
+        target_asset_balance,
+        default_return_value=True,
     )
     return target_asset_balance

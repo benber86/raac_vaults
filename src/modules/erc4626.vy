@@ -237,7 +237,11 @@ def __init__(
     # The following line uses intentionally checked arithmetic
     # to prevent a theoretically possible overflow.
     erc20.__init__(
-        name_, symbol_, _UNDERLYING_DECIMALS + _DECIMALS_OFFSET, name_eip712_, version_eip712_
+        name_,
+        symbol_,
+        _UNDERLYING_DECIMALS + _DECIMALS_OFFSET,
+        name_eip712_,
+        version_eip712_,
     )
 
 
@@ -729,7 +733,13 @@ def _deposit(sender: address, receiver: address, assets: uint256, shares: uint25
 
 
 @internal
-def _withdraw(sender: address, receiver: address, owner: address, assets: uint256, shares: uint256):
+def _withdraw(
+    sender: address,
+    receiver: address,
+    owner: address,
+    assets: uint256,
+    shares: uint256,
+):
     """
     @dev An `internal` function handling the `withdraw` and `redeem`
          common workflow.
@@ -748,5 +758,9 @@ def _withdraw(sender: address, receiver: address, owner: address, assets: uint25
     extcall IStrategy(strategy).withdraw(assets, receiver)
 
     log IERC4626.Withdraw(
-        sender=sender, receiver=receiver, owner=owner, assets=assets, shares=shares
+        sender=sender,
+        receiver=receiver,
+        owner=owner,
+        assets=assets,
+        shares=shares,
     )

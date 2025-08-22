@@ -8,7 +8,12 @@ from src.interfaces import IStrategy
 
 initializes: fee_collector
 
-exports: fee_collector.__interface__
+exports: (
+    fee_collector.factory,
+    fee_collector.set_strategy,
+    fee_collector.strategy,
+    fee_collector.treasury,
+)
 
 
 event RewardHookUpdated:
@@ -95,7 +100,7 @@ def _pay_out_caller_fee(_caller: address, _token: address, _token_amount: uint25
     return final_share
 
 
-@payable
 @external
+@payable
 def __default__():
     pass
