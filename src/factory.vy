@@ -16,16 +16,16 @@
 
 from src.modules import constants
 from src.modules.utils import conversion
-from interfaces import IStrategy
-from interfaces import IVault
-from interfaces import IBooster
-from interfaces import IHarvester
+from src.interfaces import IStrategy
+from src.interfaces import IVault
+from src.interfaces import IBooster
+from src.interfaces import IHarvester
 from snekmate.auth import ownable
-from . import strategy
+from src import strategy
 
 
 interface IERC20Detailed:
-    def name() -> String[20]: view
+    def symbol() -> String[20]: view
 
 
 initializes: ownable
@@ -144,8 +144,8 @@ def deploy_new_vault(
     pool_reward_contract: address = pool_info[3]
     pool_asset: address = pool_info[0]
 
-    pool_asset_name: String[20] = staticcall IERC20Detailed(pool_asset).name()
-    vault_token_name: String[25] = concat("RAAC ", pool_asset_name)
+    pool_asset_symbol: String[20] = staticcall IERC20Detailed(pool_asset).symbol()
+    vault_token_name: String[25] = concat("RAAC-", pool_asset_symbol)
 
 
     # we use the pool's booster ID as symbol since snekmate limits symbols to 5 chars

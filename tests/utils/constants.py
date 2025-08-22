@@ -9,7 +9,18 @@ CRVUSD_POOLS = {
             "0x6c3ea9036406852006290770BEdFcAbA0e23A0e8",  # PYUSD
             "0xf939E0A03FB07F59A73314E73794Be0E57ac1b4E",  # crvUSD
         ],
-    }
+    },
+    "usdc": {
+        "booster_id": 182,
+        "crvusd_index": 1,
+        "convex_stash": "0x0ff5EBe7e04523E35A46544201190Be12a51d5F8",
+        "convex_base_rewards": "0x44D8FaB7CD8b7877D5F79974c2F501aF6E65AbBA",
+        "pool_address": "0x4DEcE678ceceb27446b35C672dC7d61F30bAD69E",
+        "token_addresses": [
+            "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",  # USDC
+            "0xf939E0A03FB07F59A73314E73794Be0E57ac1b4E",  # crvUSD
+        ],
+    },
 }
 
 CONVEX_BOOSTER_OWNER = "0x3cE6408F923326f81A7D7929952947748180f1E6"

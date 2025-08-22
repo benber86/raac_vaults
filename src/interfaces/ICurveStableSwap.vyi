@@ -1,0 +1,16 @@
+# pragma version 0.4.3
+# @license MIT
+
+@external
+def add_liquidity(
+    _amounts: uint256[2],
+    _min_mint_amount: uint256,
+    _receiver: address,
+) -> uint256:
+    ...
+
+
+@external
+@view
+def get_virtual_price() -> uint256:
+    ...

@@ -6,14 +6,14 @@ from eth_utils import function_signature_to_4byte_selector
 
 from src import raac_vault, strategy
 from src.harvesters import cow_harvester
-from tests.conftest import PYUSD_POOL_NAME
+from tests.conftest import PYUSD_POOL_NAME, USDC_POOL_NAME
 from tests.utils.abis import COMPOSABLE_COW_ABI
 from tests.utils.constants import CRVUSD_POOLS, CURVE_TRICRV_POOL
 
 
-@pytest.mark.parametrize("pool_name", [PYUSD_POOL_NAME])
+@pytest.mark.parametrize("pool_name", [PYUSD_POOL_NAME, USDC_POOL_NAME])
 def test_cow_harvester_workflow(
-    test_cow_vault,
+    cow_vault_list,
     funded_accounts,
     pool_list,
     crvusd_token,
@@ -26,7 +26,7 @@ def test_cow_harvester_workflow(
     pool_name,
 ):
     crvusd_pool = pool_list[pool_name]
-    vault_addr, strategy_addr, harvester_addr = test_cow_vault
+    vault_addr, strategy_addr, harvester_addr = cow_vault_list[pool_name]
     user = funded_accounts[0]
 
     vault_contract = raac_vault.at(vault_addr)
