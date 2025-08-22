@@ -1,20 +1,24 @@
 import boa
+import pytest
 from boa.util.abi import abi_encode
 from eth_utils import function_signature_to_4byte_selector
 
 from src import raac_vault, strategy
+from tests.conftest import PYUSD_POOL_NAME
 from tests.utils.constants import CRVUSD_POOLS
 
 
+@pytest.mark.parametrize("pool_name", [PYUSD_POOL_NAME])
 def test_vault_harvest_single_staker(
     test_permissioned_vault,
     crvusd_token,
     funded_accounts,
-    crvusd_pool,
+    pool_list,
     get_base_reward_pool,
     harvest_manager,
-    current_pool,
+    pool_name,
 ):
+    crvusd_pool = pool_list[pool_name]
     vault_addr, strategy_addr, harvester_addr = test_permissioned_vault
     user = funded_accounts[0]
 
@@ -40,7 +44,7 @@ def test_vault_harvest_single_staker(
         [
             crvusd_pool.address,
             crvusd_token.address,
-            CRVUSD_POOLS[current_pool]["crvusd_index"],
+            CRVUSD_POOLS[pool_name]["crvusd_index"],
             0,
         ],
     )
@@ -53,15 +57,17 @@ def test_vault_harvest_single_staker(
     assert final_total_assets > initial_total_assets
 
 
+@pytest.mark.parametrize("pool_name", [PYUSD_POOL_NAME])
 def test_vault_harvest_multiple_stakers(
     test_permissioned_vault,
     crvusd_token,
     funded_accounts,
-    crvusd_pool,
+    pool_list,
     get_base_reward_pool,
     harvest_manager,
-    current_pool,
+    pool_name,
 ):
+    crvusd_pool = pool_list[pool_name]
     vault_addr, strategy_addr, harvester_addr = test_permissioned_vault
 
     vault_contract = raac_vault.at(vault_addr)
@@ -92,7 +98,7 @@ def test_vault_harvest_multiple_stakers(
         [
             crvusd_pool.address,
             crvusd_token.address,
-            CRVUSD_POOLS[current_pool]["crvusd_index"],
+            CRVUSD_POOLS[pool_name]["crvusd_index"],
             0,
         ],
     )
@@ -111,15 +117,17 @@ def test_vault_harvest_multiple_stakers(
         assert user_asset_value >= data["deposit"]
 
 
+@pytest.mark.parametrize("pool_name", [PYUSD_POOL_NAME])
 def test_vault_withdraw_after_harvest_profit(
     test_permissioned_vault,
     crvusd_token,
     funded_accounts,
-    crvusd_pool,
+    pool_list,
     get_base_reward_pool,
     harvest_manager,
-    current_pool,
+    pool_name,
 ):
+    crvusd_pool = pool_list[pool_name]
     vault_addr, strategy_addr, harvester_addr = test_permissioned_vault
     user = funded_accounts[0]
 
@@ -141,7 +149,7 @@ def test_vault_withdraw_after_harvest_profit(
         [
             crvusd_pool.address,
             crvusd_token.address,
-            CRVUSD_POOLS[current_pool]["crvusd_index"],
+            CRVUSD_POOLS[pool_name]["crvusd_index"],
             0,
         ],
     )
@@ -162,14 +170,16 @@ def test_vault_withdraw_after_harvest_profit(
     assert total_received > deposit_amount
 
 
+@pytest.mark.parametrize("pool_name", [PYUSD_POOL_NAME])
 def test_vault_harvest_reverts_high_min_amount_out(
     test_permissioned_vault,
     crvusd_token,
     funded_accounts,
-    crvusd_pool,
+    pool_list,
     harvest_manager,
-    current_pool,
+    pool_name,
 ):
+    crvusd_pool = pool_list[pool_name]
     vault_addr, strategy_addr, harvester_addr = test_permissioned_vault
     user = funded_accounts[0]
 
@@ -191,7 +201,7 @@ def test_vault_harvest_reverts_high_min_amount_out(
         [
             crvusd_pool.address,
             crvusd_token.address,
-            CRVUSD_POOLS[current_pool]["crvusd_index"],
+            CRVUSD_POOLS[pool_name]["crvusd_index"],
             2**256 - 1,
         ],
     )

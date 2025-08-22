@@ -1,9 +1,10 @@
 import boa
+import pytest
 from boa.util.abi import abi_encode
 from eth_utils import function_signature_to_4byte_selector
 
 from src import raac_vault
-from tests.conftest import ZERO_ADDRESS
+from tests.conftest import PYUSD_POOL_NAME, ZERO_ADDRESS
 from tests.utils.constants import (
     CRVUSD_POOLS,
     CRVUSD_TOKEN,
@@ -14,17 +15,19 @@ from tests.utils.constants import (
 )
 
 
+@pytest.mark.parametrize("pool_name", [PYUSD_POOL_NAME])
 def test_vault_harvest_single_staker_with_extra_rewards(
     test_extra_rewards_permissioned_vault,
     crvusd_token,
     funded_accounts,
-    crvusd_pool,
+    pool_list,
     get_base_reward_pool,
     set_up_extra_rewards_for_pool,
     treasury,
     harvest_manager,
-    current_pool,
+    pool_name,
 ):
+    crvusd_pool = pool_list[pool_name]
     vault_addr, strategy_addr, harvester_addr = (
         test_extra_rewards_permissioned_vault
     )
@@ -56,7 +59,7 @@ def test_vault_harvest_single_staker_with_extra_rewards(
         [
             crvusd_pool.address,
             crvusd_token.address,
-            CRVUSD_POOLS[current_pool]["crvusd_index"],
+            CRVUSD_POOLS[pool_name]["crvusd_index"],
             0,
         ],
     )

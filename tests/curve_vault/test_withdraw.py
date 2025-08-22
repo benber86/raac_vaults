@@ -6,7 +6,7 @@ from src import raac_vault, strategy
 def test_vault_partial_withdraw_single_user(
     test_permissioned_vault,
     funded_accounts,
-    crvusd_pool,
+    pyusd_pool,
     get_base_reward_pool,
 ):
     vault_addr, strategy_addr, harvester_addr = test_permissioned_vault
@@ -16,17 +16,17 @@ def test_vault_partial_withdraw_single_user(
     strategy_contract = strategy.at(strategy_addr)
     reward_pool = get_base_reward_pool(strategy_contract.rewards_contract())
 
-    user_lp_balance = crvusd_pool.balanceOf(user)
+    user_lp_balance = pyusd_pool.balanceOf(user)
     deposit_amount = user_lp_balance // 2
 
     with boa.env.prank(user):
-        crvusd_pool.approve(vault_addr, deposit_amount)
+        pyusd_pool.approve(vault_addr, deposit_amount)
         shares_received = vault_contract.deposit(deposit_amount, user)
 
     withdraw_assets = vault_contract.convertToAssets(shares_received // 2)
 
     initial_strategy_balance = reward_pool.balanceOf(strategy_addr)
-    initial_user_lp_balance = crvusd_pool.balanceOf(user)
+    initial_user_lp_balance = pyusd_pool.balanceOf(user)
     initial_user_shares = vault_contract.balanceOf(user)
 
     with boa.env.prank(user):
@@ -40,7 +40,7 @@ def test_vault_partial_withdraw_single_user(
         assert withdraw_log.shares == shares_burned
 
     final_strategy_balance = reward_pool.balanceOf(strategy_addr)
-    final_user_lp_balance = crvusd_pool.balanceOf(user)
+    final_user_lp_balance = pyusd_pool.balanceOf(user)
     final_user_shares = vault_contract.balanceOf(user)
 
     assert final_strategy_balance == initial_strategy_balance - withdraw_assets
@@ -51,7 +51,7 @@ def test_vault_partial_withdraw_single_user(
 def test_vault_full_withdraw_single_user(
     test_permissioned_vault,
     funded_accounts,
-    crvusd_pool,
+    pyusd_pool,
     get_base_reward_pool,
 ):
     vault_addr, strategy_addr, harvester_addr = test_permissioned_vault
@@ -61,10 +61,10 @@ def test_vault_full_withdraw_single_user(
     strategy_contract = strategy.at(strategy_addr)
     reward_pool = get_base_reward_pool(strategy_contract.rewards_contract())
 
-    user_lp_balance = crvusd_pool.balanceOf(user)
+    user_lp_balance = pyusd_pool.balanceOf(user)
 
     with boa.env.prank(user):
-        crvusd_pool.approve(vault_addr, user_lp_balance)
+        pyusd_pool.approve(vault_addr, user_lp_balance)
         shares_received = vault_contract.deposit(user_lp_balance, user)
 
     withdraw_assets = vault_contract.convertToAssets(shares_received)
@@ -74,7 +74,7 @@ def test_vault_full_withdraw_single_user(
         vault_contract.withdraw(withdraw_assets, user, user)
 
     final_strategy_balance = reward_pool.balanceOf(strategy_addr)
-    final_user_lp_balance = crvusd_pool.balanceOf(user)
+    final_user_lp_balance = pyusd_pool.balanceOf(user)
     final_user_shares = vault_contract.balanceOf(user)
 
     assert final_strategy_balance == initial_strategy_balance - withdraw_assets
@@ -85,7 +85,7 @@ def test_vault_full_withdraw_single_user(
 def test_vault_withdraw_for_another_user(
     test_permissioned_vault,
     funded_accounts,
-    crvusd_pool,
+    pyusd_pool,
     get_base_reward_pool,
 ):
     vault_addr, strategy_addr, harvester_addr = test_permissioned_vault
@@ -94,15 +94,15 @@ def test_vault_withdraw_for_another_user(
 
     vault_contract = raac_vault.at(vault_addr)
 
-    owner_lp_balance = crvusd_pool.balanceOf(owner)
+    owner_lp_balance = pyusd_pool.balanceOf(owner)
     deposit_amount = owner_lp_balance // 2
 
     with boa.env.prank(owner):
-        crvusd_pool.approve(vault_addr, deposit_amount)
+        pyusd_pool.approve(vault_addr, deposit_amount)
         shares_received = vault_contract.deposit(deposit_amount, owner)
 
     withdraw_assets = vault_contract.convertToAssets(shares_received // 2)
-    initial_receiver_lp_balance = crvusd_pool.balanceOf(receiver)
+    initial_receiver_lp_balance = pyusd_pool.balanceOf(receiver)
     initial_owner_shares = vault_contract.balanceOf(owner)
 
     with boa.env.prank(owner):
@@ -117,7 +117,7 @@ def test_vault_withdraw_for_another_user(
         assert withdraw_log.assets == withdraw_assets
         assert withdraw_log.shares == shares_burned
 
-    final_receiver_lp_balance = crvusd_pool.balanceOf(receiver)
+    final_receiver_lp_balance = pyusd_pool.balanceOf(receiver)
     final_owner_shares = vault_contract.balanceOf(owner)
 
     assert (
@@ -128,18 +128,18 @@ def test_vault_withdraw_for_another_user(
 
 
 def test_vault_withdraw_more_than_balance_reverts(
-    test_permissioned_vault, funded_accounts, crvusd_pool
+    test_permissioned_vault, funded_accounts, pyusd_pool
 ):
     vault_addr, strategy_addr, harvester_addr = test_permissioned_vault
     user = funded_accounts[4]
 
     vault_contract = raac_vault.at(vault_addr)
 
-    user_lp_balance = crvusd_pool.balanceOf(user)
+    user_lp_balance = pyusd_pool.balanceOf(user)
     deposit_amount = user_lp_balance // 2
 
     with boa.env.prank(user):
-        crvusd_pool.approve(vault_addr, deposit_amount)
+        pyusd_pool.approve(vault_addr, deposit_amount)
         shares_received = vault_contract.deposit(deposit_amount, user)
 
     max_withdrawable = vault_contract.convertToAssets(shares_received)
