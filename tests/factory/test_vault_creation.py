@@ -75,7 +75,7 @@ def test_vault_deployment_with_hooks(
     assert harvester_contract.target_hook() == target_hook_addr
 
     assert vault_contract.symbol() == str(CRVUSD_POOLS["pyusd"]["booster_id"])
-    assert vault_contract.name() == "RAAC " + crvusd_pool.name()[:20]
+    assert vault_contract.name() == "RAAC-" + crvusd_pool.symbol()[:20]
 
 
 def test_vault_deployment_reverts_for_large_booster_id(
@@ -127,4 +127,4 @@ def test_parametrized_vault_deployment(
     assert vault_contract.symbol() == str(
         CRVUSD_POOLS[pool_name]["booster_id"]
     )
-    assert vault_contract.name() == "RAAC " + pool_contract.name()[:20]
+    assert vault_contract.name() == "RAAC-" + pool_contract.symbol()[:20]

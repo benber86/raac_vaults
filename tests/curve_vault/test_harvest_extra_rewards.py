@@ -4,7 +4,7 @@ from boa.util.abi import abi_encode
 from eth_utils import function_signature_to_4byte_selector
 
 from src import raac_vault
-from tests.conftest import PYUSD_POOL_NAME, ZERO_ADDRESS
+from tests.conftest import PYUSD_POOL_NAME, USDC_POOL_NAME, ZERO_ADDRESS
 from tests.utils.constants import (
     CRVUSD_POOLS,
     CRVUSD_TOKEN,
@@ -15,9 +15,9 @@ from tests.utils.constants import (
 )
 
 
-@pytest.mark.parametrize("pool_name", [PYUSD_POOL_NAME])
+@pytest.mark.parametrize("pool_name", [PYUSD_POOL_NAME, USDC_POOL_NAME])
 def test_vault_harvest_single_staker_with_extra_rewards(
-    test_extra_rewards_permissioned_vault,
+    extra_rewards_vault_list,
     crvusd_token,
     funded_accounts,
     pool_list,
@@ -28,9 +28,9 @@ def test_vault_harvest_single_staker_with_extra_rewards(
     pool_name,
 ):
     crvusd_pool = pool_list[pool_name]
-    vault_addr, strategy_addr, harvester_addr = (
-        test_extra_rewards_permissioned_vault
-    )
+    vault_addr, strategy_addr, harvester_addr = extra_rewards_vault_list[
+        pool_name
+    ]
     user = funded_accounts[0]
 
     vault_contract = raac_vault.at(vault_addr)

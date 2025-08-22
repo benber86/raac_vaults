@@ -1,14 +1,16 @@
 # pragma version 0.4.3
 """
-@title RAAC Vault hook to add one-sided liquidity to a regular Curve pool
-@custom:contract-name raac_add_liquidity_hook
+@title RAAC Vault hook to add one-sided liquidity to an NG Curve pool
+@custom:contract-name raac_add_liquidity_ng_hook
 @license MIT
 @author benny
 """
 
 from ethereum.ercs import IERC20
-from src.interfaces import ICurveStableSwap
+from src.interfaces import ICurveStableSwapNG
 from src.interfaces import IHarvester
+
+MAX_COINS: constant(uint256) = 8
 
 
 @external
@@ -19,8 +21,8 @@ def add_liquidity(
     _min_amount_out: uint256,
 ):
     """
-    @notice Add one-sided liquidity to a regular Curve pool via this hook.
-    @param _pool_address The Curve pool contract address.
+    @notice Add one-sided liquidity to a Curve NG pool via this hook.
+    @param _pool_address The Curve NG pool contract address.
     @param _token The token address to provide as liquidity.
     @param _token_index The index of the token in the pool.
     @param _min_amount_out The minimum pool tokens to mint.
@@ -32,10 +34,13 @@ def add_liquidity(
     extcall IHarvester(msg.sender).transfer_to_target_hook(_token, amount)
     extcall IERC20(_token).approve(_pool_address, 0)
     extcall IERC20(_token).approve(_pool_address, amount)
+    liquidity_amounts: DynArray[uint256, MAX_COINS] = empty(DynArray[uint256, MAX_COINS])
+    for i: uint256 in range(MAX_COINS):
+        if i == _token_index:
+            liquidity_amounts.append(amount)
+            break
+        liquidity_amounts.append(0)
 
-    liquidity_amounts: uint256[2] = [0, 0]
-    liquidity_amounts[_token_index] = amount
-
-    extcall ICurveStableSwap(_pool_address).add_liquidity(
+    extcall ICurveStableSwapNG(_pool_address).add_liquidity(
         liquidity_amounts, _min_amount_out, msg.sender
     )
