@@ -154,7 +154,6 @@ def test_cow_harvester_workflow(
     )
 
     # Calculate expected vault increase in LP token terms
-    # Use anchor to simulate add_liquidity without persisting state
     with boa.env.anchor():
         initial_lp_balance = crvusd_pool.balanceOf(harvester_addr)
 
@@ -164,14 +163,14 @@ def test_cow_harvester_workflow(
 
         crvusd_index = CRVUSD_POOLS[pool_name]["crvusd_index"]
         if pool_name == "pyusd":
-            # NG pool - use dynamic array
+            # NG pool
             amounts = [0, 0]
             amounts[crvusd_index] = expected_net_harvest
             with boa.env.prank(harvester_addr):
                 crvusd_token.approve(crvusd_pool.address, expected_net_harvest)
                 crvusd_pool.add_liquidity(amounts, 0)
         else:
-            # Regular stableswap - use fixed array
+            # Regular stableswap
             amounts = [0, 0]
             amounts[crvusd_index] = expected_net_harvest
             with boa.env.prank(harvester_addr):
@@ -199,7 +198,7 @@ def test_cow_harvester_workflow(
         actual_vault_increase, expected_vault_increase_lp, 1e-3
     ), f"Vault increase mismatch: got {actual_vault_increase}, expected {expected_vault_increase_lp}"
 
-    # 8. Check that new orders were created with updated amounts
+    # Check that new orders were created with updated amounts
     new_crv_order_exists, new_crv_order_info = (
         harvester_contract.get_order_info(crv_token.address)
     )
