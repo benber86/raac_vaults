@@ -16,6 +16,7 @@ def test_vault_harvest_single_staker(
     pool_list,
     get_base_reward_pool,
     harvest_manager,
+    treasury,
     pool_name,
 ):
     crvusd_pool = pool_list[pool_name]
@@ -34,6 +35,7 @@ def test_vault_harvest_single_staker(
         vault_contract.deposit(deposit_amount, user)
 
     initial_total_assets = vault_contract.totalAssets()
+    initial_treasury_crvusd = crvusd_token.balanceOf(treasury)
 
     boa.env.time_travel(seconds=86400 * 7)
 
@@ -54,7 +56,12 @@ def test_vault_harvest_single_staker(
         vault_contract.harvest(user, 0, [], b"", target_hook_calldata, b"")
 
     final_total_assets = vault_contract.totalAssets()
+    final_treasury_crvusd = crvusd_token.balanceOf(treasury)
+
     assert final_total_assets > initial_total_assets
+    assert (
+        final_treasury_crvusd > initial_treasury_crvusd
+    ), "Treasury should receive crvUSD platform fees"
 
 
 @pytest.mark.parametrize("pool_name", [PYUSD_POOL_NAME, USDC_POOL_NAME])
@@ -65,6 +72,7 @@ def test_vault_harvest_multiple_stakers(
     pool_list,
     get_base_reward_pool,
     harvest_manager,
+    treasury,
     pool_name,
 ):
     crvusd_pool = pool_list[pool_name]
@@ -88,6 +96,7 @@ def test_vault_harvest_multiple_stakers(
             }
 
     initial_total_assets = vault_contract.totalAssets()
+    initial_treasury_crvusd = crvusd_token.balanceOf(treasury)
 
     boa.env.time_travel(seconds=86400 * 7)
 
@@ -110,7 +119,12 @@ def test_vault_harvest_multiple_stakers(
         )
 
     final_total_assets = vault_contract.totalAssets()
+    final_treasury_crvusd = crvusd_token.balanceOf(treasury)
+
     assert final_total_assets > initial_total_assets
+    assert (
+        final_treasury_crvusd > initial_treasury_crvusd
+    ), "Treasury should receive crvUSD platform fees"
 
     for user, data in user_deposits.items():
         user_asset_value = vault_contract.convertToAssets(data["shares"])
@@ -125,6 +139,7 @@ def test_vault_withdraw_after_harvest_profit(
     pool_list,
     get_base_reward_pool,
     harvest_manager,
+    treasury,
     pool_name,
 ):
     crvusd_pool = pool_list[pool_name]
@@ -140,6 +155,7 @@ def test_vault_withdraw_after_harvest_profit(
         crvusd_pool.approve(vault_addr, deposit_amount)
         shares_received = vault_contract.deposit(deposit_amount, user)
 
+    initial_treasury_crvusd = crvusd_token.balanceOf(treasury)
     boa.env.time_travel(seconds=86400 * 7)
 
     sig = "add_liquidity(address,address,uint256,uint256)"
@@ -157,6 +173,11 @@ def test_vault_withdraw_after_harvest_profit(
 
     with boa.env.prank(harvest_manager):
         vault_contract.harvest(user, 0, [], b"", target_hook_calldata, b"")
+
+    final_treasury_crvusd = crvusd_token.balanceOf(treasury)
+    assert (
+        final_treasury_crvusd > initial_treasury_crvusd
+    ), "Treasury should receive crvUSD platform fees"
 
     initial_user_lp_balance = crvusd_pool.balanceOf(user)
     withdrawable_assets = vault_contract.convertToAssets(shares_received)
@@ -177,6 +198,7 @@ def test_vault_harvest_reverts_high_min_amount_out(
     funded_accounts,
     pool_list,
     harvest_manager,
+    treasury,
     pool_name,
 ):
     crvusd_pool = pool_list[pool_name]
