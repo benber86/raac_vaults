@@ -110,17 +110,19 @@ The protocol implements a dual-fee structure to sustain operations and incentivi
 
 ### Platform Fee
 - **Purpose**: Revenue for protocol treasury and development
-- **Default Rate**: 20% (2000 basis points) of total reward value
+- **Default Rate**: 20% (2000 basis points) of harvested crvUSD
 - **Maximum**: Set to 30% (3000 basis points)
-- **Calculation**: Based on ETH-denominated value of all rewards (CRV + CVX + extras)
-- **Collection Strategy**: Prioritizes taking CVX tokens first, then CRV if needed to reach 20% threshold (valuation and threshold calculation done with Curve pool oracles)
+- **Collection**: Taken as a percentage of the final crvUSD amount after rewards are swapped
+- **Distribution**: Sent directly to the treasury address in crvUSD
 - **Management**: Configurable by Strategy Manager role
 
 ### Caller Fee
 - **Purpose**: Compensate harvesters for gas costs and provide harvest incentives
-- **Default Rate**: 1% (100 basis points) of total reward value
+- **Default Rate**: 1% (100 basis points) of harvested crvUSD
 - **Maximum**: Set to 10% (1000 basis points)
+- **Collection**: Taken as a percentage of the final crvUSD amount after rewards are swapped
 - **Recipient**: Address that calls the harvest function (keeper bots, EOAs, etc.)
+- **Distribution**: Sent directly to the caller in crvUSD
 - **Management**: Configurable by Strategy Manager role - however may need to be handled differently as the caller fee should be able to be adjusted to optimize harvest frequency based on expected yield and gas prices.
 
 
