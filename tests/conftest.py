@@ -24,9 +24,8 @@ from tests.utils.constants import (
     CRVUSD_POOLS,
     RSUP_STAKER_CONTRACT,
     RSUP_TOKEN,
+    ZERO_ADDRESS,
 )
-
-ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
 
 # Pool name constants for parametrization
 PYUSD_POOL_NAME = "pyusd"
