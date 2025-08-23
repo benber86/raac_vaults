@@ -64,7 +64,7 @@ def __init__(
 ):
     """
     @param _asset Address of the LP token this strategy will manage
-    @param _rewards_contract Address of the Convex staking contrVaultSetact for rewards
+    @param _rewards_contract Address of the Convex staking contract for rewards
     @param _harvester Address of the harvester contract for processing rewards
     @param _booster_id Convex pool ID for depositing into the booster
     @dev Sets initial platform fee to 20% and caller fee to 1%
