@@ -9,6 +9,7 @@ from tests.utils.constants import CRVUSD_POOLS
 from tests.utils.harvest_calculations import (
     approx,
     calc_expected_fees,
+    calc_expected_lp_tokens,
     calc_gross_harvest_amount,
 )
 
@@ -97,22 +98,14 @@ def test_vault_harvest_single_staker(
     print("-" * 50)
 
     # Calculate expected vault increase in LP token terms
-    with boa.env.anchor():
-        initial_lp_balance = crvusd_pool.balanceOf(harvester_addr)
-
-        # Simulate adding the net harvest crvUSD as liquidity
-        with boa.env.prank(crvusd_minter):
-            crvusd_token.mint(harvester_addr, expected_net_harvest)
-
-        crvusd_index = CRVUSD_POOLS[pool_name]["crvusd_index"]
-        amounts = [0, 0]
-        amounts[crvusd_index] = expected_net_harvest
-        with boa.env.prank(harvester_addr):
-            crvusd_token.approve(crvusd_pool.address, expected_net_harvest)
-            crvusd_pool.add_liquidity(amounts, 0)
-
-        final_lp_balance = crvusd_pool.balanceOf(harvester_addr)
-        expected_vault_increase_lp = final_lp_balance - initial_lp_balance
+    expected_vault_increase_lp = calc_expected_lp_tokens(
+        crvusd_pool,
+        harvester_addr,
+        crvusd_token,
+        crvusd_minter,
+        expected_net_harvest,
+        pool_name,
+    )
 
     print(
         f"Expected vault increase: {expected_vault_increase_lp / 1e18:.6f} LP tokens"
@@ -217,23 +210,14 @@ def test_vault_harvest_multiple_stakers(
     )
 
     # Calculate expected vault increase in LP token terms
-    # Use anchor to simulate add_liquidity without persisting state
-    with boa.env.anchor():
-        initial_lp_balance = crvusd_pool.balanceOf(harvester_addr)
-
-        # Simulate adding the net harvest crvUSD as liquidity
-        with boa.env.prank(crvusd_minter):
-            crvusd_token.mint(harvester_addr, expected_net_harvest)
-
-        crvusd_index = CRVUSD_POOLS[pool_name]["crvusd_index"]
-        amounts = [0, 0]
-        amounts[crvusd_index] = expected_net_harvest
-        with boa.env.prank(harvester_addr):
-            crvusd_token.approve(crvusd_pool.address, expected_net_harvest)
-            crvusd_pool.add_liquidity(amounts, 0)
-
-        final_lp_balance = crvusd_pool.balanceOf(harvester_addr)
-        expected_vault_increase_lp = final_lp_balance - initial_lp_balance
+    expected_vault_increase_lp = calc_expected_lp_tokens(
+        crvusd_pool,
+        harvester_addr,
+        crvusd_token,
+        crvusd_minter,
+        expected_net_harvest,
+        pool_name,
+    )
 
     print(
         f"Expected vault increase: {expected_vault_increase_lp / 1e18:.6f} LP tokens"

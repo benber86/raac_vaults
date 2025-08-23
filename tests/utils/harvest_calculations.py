@@ -1,8 +1,10 @@
+import boa
 from boa.contracts.abi.abi_contract import ABIContractFactory
 
 from tests.utils.abis import BASE_REWARD_POOL_ABI, ERC20_ABI
 from tests.utils.constants import (
     CRV_TOKEN,
+    CRVUSD_POOLS,
     CURVE_CVX_ETH_POOL,
     CURVE_TRICRV_POOL,
     CVX_MINING_CONTRACT,
@@ -122,3 +124,29 @@ def calc_expected_fees(gross_harvest, platform_fee_bps, caller_fee_bps):
     caller_fees = gross_harvest * caller_fee_bps // 10000
     net_harvest = gross_harvest - platform_fees - caller_fees
     return platform_fees, caller_fees, net_harvest
+
+
+def calc_expected_lp_tokens(
+    crvusd_pool,
+    harvester_addr,
+    crvusd_token,
+    crvusd_minter,
+    expected_net_harvest,
+    pool_name,
+):
+
+    with boa.env.anchor():
+        initial_lp_balance = crvusd_pool.balanceOf(harvester_addr)
+
+        with boa.env.prank(crvusd_minter):
+            crvusd_token.mint(harvester_addr, expected_net_harvest)
+
+        crvusd_index = CRVUSD_POOLS[pool_name]["crvusd_index"]
+        amounts = [0, 0]
+        amounts[crvusd_index] = expected_net_harvest
+        with boa.env.prank(harvester_addr):
+            crvusd_token.approve(crvusd_pool.address, expected_net_harvest)
+            crvusd_pool.add_liquidity(amounts, 0)
+
+        final_lp_balance = crvusd_pool.balanceOf(harvester_addr)
+        return final_lp_balance - initial_lp_balance
