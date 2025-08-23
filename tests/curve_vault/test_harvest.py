@@ -6,12 +6,18 @@ from eth_utils import function_signature_to_4byte_selector
 from src import raac_vault, strategy
 from tests.conftest import PYUSD_POOL_NAME, USDC_POOL_NAME
 from tests.utils.constants import CRVUSD_POOLS
+from tests.utils.harvest_calculations import (
+    approx,
+    calc_expected_fees,
+    calc_gross_harvest_amount,
+)
 
 
 @pytest.mark.parametrize("pool_name", [PYUSD_POOL_NAME, USDC_POOL_NAME])
 def test_vault_harvest_single_staker(
     vault_list,
     crvusd_token,
+    crvusd_minter,
     funded_accounts,
     pool_list,
     get_base_reward_pool,
@@ -37,7 +43,29 @@ def test_vault_harvest_single_staker(
     initial_total_assets = vault_contract.totalAssets()
     initial_treasury_crvusd = crvusd_token.balanceOf(treasury)
 
-    boa.env.time_travel(seconds=86400 * 7)
+    boa.env.time_travel(seconds=86400 * 10)
+
+    # Calculate expected harvest amounts before harvest
+    gross_estimated_harvest = calc_gross_harvest_amount(
+        strategy_addr, strategy_contract.rewards_contract()
+    )
+    platform_fee_bps = strategy_contract.platform_fee()
+    caller_fee_bps = strategy_contract.caller_fee()
+
+    expected_platform_fees, expected_caller_fees, expected_net_harvest = (
+        calc_expected_fees(
+            gross_estimated_harvest, platform_fee_bps, caller_fee_bps
+        )
+    )
+
+    print(
+        f"Expected gross harvest: {gross_estimated_harvest / 1e18:.6f} crvUSD"
+    )
+    print(
+        f"Expected platform fees: {expected_platform_fees / 1e18:.6f} crvUSD"
+    )
+    print(f"Expected caller fees: {expected_caller_fees / 1e18:.6f} crvUSD")
+    print(f"Expected net harvest: {expected_net_harvest / 1e18:.6f} crvUSD")
 
     sig = "add_liquidity(address,address,uint256,uint256)"
     selector = function_signature_to_4byte_selector(sig)
@@ -58,16 +86,53 @@ def test_vault_harvest_single_staker(
     final_total_assets = vault_contract.totalAssets()
     final_treasury_crvusd = crvusd_token.balanceOf(treasury)
 
-    assert final_total_assets > initial_total_assets
-    assert (
-        final_treasury_crvusd > initial_treasury_crvusd
-    ), "Treasury should receive crvUSD platform fees"
+    # Calculate actual amounts
+    actual_treasury_fees = final_treasury_crvusd - initial_treasury_crvusd
+    actual_vault_increase = final_total_assets - initial_total_assets
+
+    print(f"Actual treasury fees: {actual_treasury_fees / 1e18:.6f} crvUSD")
+    print(
+        f"Actual vault increase: {actual_vault_increase / 1e18:.6f} LP tokens"
+    )
+    print("-" * 50)
+
+    # Calculate expected vault increase in LP token terms
+    with boa.env.anchor():
+        initial_lp_balance = crvusd_pool.balanceOf(harvester_addr)
+
+        # Simulate adding the net harvest crvUSD as liquidity
+        with boa.env.prank(crvusd_minter):
+            crvusd_token.mint(harvester_addr, expected_net_harvest)
+
+        crvusd_index = CRVUSD_POOLS[pool_name]["crvusd_index"]
+        amounts = [0, 0]
+        amounts[crvusd_index] = expected_net_harvest
+        with boa.env.prank(harvester_addr):
+            crvusd_token.approve(crvusd_pool.address, expected_net_harvest)
+            crvusd_pool.add_liquidity(amounts, 0)
+
+        final_lp_balance = crvusd_pool.balanceOf(harvester_addr)
+        expected_vault_increase_lp = final_lp_balance - initial_lp_balance
+
+    print(
+        f"Expected vault increase: {expected_vault_increase_lp / 1e18:.6f} LP tokens"
+    )
+
+    # Verify precise fee distributions (allowing more tolerance for oracle-based swaps)
+    assert approx(
+        actual_treasury_fees, expected_platform_fees, 5e-2
+    ), f"Treasury fees mismatch: got {actual_treasury_fees}, expected {expected_platform_fees}"
+
+    assert approx(
+        actual_vault_increase, expected_vault_increase_lp, 5e-2
+    ), f"Vault increase mismatch: got {actual_vault_increase}, expected {expected_vault_increase_lp}"
 
 
 @pytest.mark.parametrize("pool_name", [PYUSD_POOL_NAME, USDC_POOL_NAME])
 def test_vault_harvest_multiple_stakers(
     vault_list,
     crvusd_token,
+    crvusd_minter,
     funded_accounts,
     pool_list,
     get_base_reward_pool,
@@ -100,6 +165,27 @@ def test_vault_harvest_multiple_stakers(
 
     boa.env.time_travel(seconds=86400 * 7)
 
+    # Calculate expected harvest amounts before harvest
+    gross_estimated_harvest = calc_gross_harvest_amount(
+        strategy_addr, strategy_contract.rewards_contract()
+    )
+    platform_fee_bps = strategy_contract.platform_fee()
+    caller_fee_bps = strategy_contract.caller_fee()
+
+    expected_platform_fees, expected_caller_fees, expected_net_harvest = (
+        calc_expected_fees(
+            gross_estimated_harvest, platform_fee_bps, caller_fee_bps
+        )
+    )
+
+    print(
+        f"Expected gross harvest: {gross_estimated_harvest / 1e18:.6f} crvUSD"
+    )
+    print(
+        f"Expected platform fees: {expected_platform_fees / 1e18:.6f} crvUSD"
+    )
+    print(f"Expected net harvest: {expected_net_harvest / 1e18:.6f} crvUSD")
+
     sig = "add_liquidity(address,address,uint256,uint256)"
     selector = function_signature_to_4byte_selector(sig)
     encoded_args = abi_encode(
@@ -121,10 +207,46 @@ def test_vault_harvest_multiple_stakers(
     final_total_assets = vault_contract.totalAssets()
     final_treasury_crvusd = crvusd_token.balanceOf(treasury)
 
-    assert final_total_assets > initial_total_assets
-    assert (
-        final_treasury_crvusd > initial_treasury_crvusd
-    ), "Treasury should receive crvUSD platform fees"
+    # Calculate actual amounts
+    actual_treasury_fees = final_treasury_crvusd - initial_treasury_crvusd
+    actual_vault_increase = final_total_assets - initial_total_assets
+
+    print(f"Actual treasury fees: {actual_treasury_fees / 1e18:.6f} crvUSD")
+    print(
+        f"Actual vault increase: {actual_vault_increase / 1e18:.6f} LP tokens"
+    )
+
+    # Calculate expected vault increase in LP token terms
+    # Use anchor to simulate add_liquidity without persisting state
+    with boa.env.anchor():
+        initial_lp_balance = crvusd_pool.balanceOf(harvester_addr)
+
+        # Simulate adding the net harvest crvUSD as liquidity
+        with boa.env.prank(crvusd_minter):
+            crvusd_token.mint(harvester_addr, expected_net_harvest)
+
+        crvusd_index = CRVUSD_POOLS[pool_name]["crvusd_index"]
+        amounts = [0, 0]
+        amounts[crvusd_index] = expected_net_harvest
+        with boa.env.prank(harvester_addr):
+            crvusd_token.approve(crvusd_pool.address, expected_net_harvest)
+            crvusd_pool.add_liquidity(amounts, 0)
+
+        final_lp_balance = crvusd_pool.balanceOf(harvester_addr)
+        expected_vault_increase_lp = final_lp_balance - initial_lp_balance
+
+    print(
+        f"Expected vault increase: {expected_vault_increase_lp / 1e18:.6f} LP tokens"
+    )
+
+    # Verify precise fee distributions
+    assert approx(
+        actual_treasury_fees, expected_platform_fees, 5e-2
+    ), f"Treasury fees mismatch: got {actual_treasury_fees}, expected {expected_platform_fees}"
+
+    assert approx(
+        actual_vault_increase, expected_vault_increase_lp, 5e-2
+    ), f"Vault increase mismatch: got {actual_vault_increase}, expected {expected_vault_increase_lp}"
 
     for user, data in user_deposits.items():
         user_asset_value = vault_contract.convertToAssets(data["shares"])

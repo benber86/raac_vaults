@@ -167,9 +167,9 @@ def accounts():
 def funded_accounts(accounts, crvusd_token, crvusd_minter, pool_list):
     for user in accounts:
         with boa.env.prank(crvusd_minter):
-            crvusd_token.mint(user, int(100_000 * len(pool_list) * 1e18))
+            crvusd_token.mint(user, int(1_000_000 * len(pool_list) * 1e18))
 
-        amount = int(50_000 * 1e18)
+        amount = int(500_000 * 1e18)
         for pool_name, pool_contract in pool_list.items():
             with boa.env.prank(user):
                 crvusd_token.approve(pool_contract.address, amount)
