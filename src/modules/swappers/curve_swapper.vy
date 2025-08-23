@@ -96,6 +96,7 @@ def _swap_rewards_to_eth() -> uint256:
     crv_balance: uint256 = staticcall IERC20(constants.CRV_TOKEN).balanceOf(self)
     eth_from_crv: uint256 = 0
     eth_from_cvx: uint256 = 0
+    # min_amounts_out are set to 1 as slippage check is done on the final crvUSD amount
     if cvx_balance > 0:
         eth_from_cvx = self._cvx_to_eth(cvx_balance, 1)
     if crv_balance > 0:
