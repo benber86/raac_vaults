@@ -41,8 +41,7 @@ def test_cow_harvester_workflow(
         vault_contract.deposit(deposit_amount, user)
 
     initial_total_assets = vault_contract.totalAssets()
-    initial_treasury_crv = crv_token.balanceOf(treasury)
-    initial_treasury_cvx = cvx_token.balanceOf(treasury)
+    initial_treasury_crvusd = crvusd_token.balanceOf(treasury)
 
     boa.env.time_travel(seconds=86400 * 2)
 
@@ -63,16 +62,11 @@ def test_cow_harvester_workflow(
             abi_encode("(uint256[])", [buy_amounts]),
         )
 
-    # 2. Check that treasury fees were paid in CRV/CVX
-    final_treasury_crv = crv_token.balanceOf(treasury)
-    final_treasury_cvx = cvx_token.balanceOf(treasury)
-
+    # 2. Check that no treasury fees paid yet (no crvUSD available)
+    intermediate_treasury_crvusd = crvusd_token.balanceOf(treasury)
     assert (
-        final_treasury_crv > initial_treasury_crv
-    ), "Treasury should receive CRV fees"
-    assert (
-        final_treasury_cvx > initial_treasury_cvx
-    ), "Treasury should receive CVX fees"
+        intermediate_treasury_crvusd == initial_treasury_crvusd
+    ), "Treasury should not receive fees on first harvest (no crvUSD available)"
 
     # 3. Check that orders were created
     crv_order_exists, crv_order_info = harvester_contract.get_order_info(
@@ -124,6 +118,12 @@ def test_cow_harvester_workflow(
     # 7. Check that second harvest results
     final_user_crvusd = crvusd_token.balanceOf(user)
     final_vault_assets = vault_contract.totalAssets()
+    final_treasury_crvusd = crvusd_token.balanceOf(treasury)
+
+    # Treasury should receive platform fees in crvUSD from second harvest
+    assert (
+        final_treasury_crvusd > initial_treasury_crvusd
+    ), "Treasury should receive crvUSD platform fees"
 
     # Caller should receive fee in crvUSD
     assert (
