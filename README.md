@@ -14,6 +14,9 @@ The factory allows users to creates ERC4626-compliant vaults that automatically 
 5. Anyone with the Harvester role calls `harvest()` to compound rewards
 6. Users can withdraw their LP tokens plus compounded rewards anytime
 
+### Out of audit scope
+- snekmate's ownable and access control modules (already audited)
+- add_liquidity_ng.vy hook
 
 ## Architecture
 
