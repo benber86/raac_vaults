@@ -25,7 +25,7 @@ from src.interfaces import IBasicRewards
 from src.interfaces import IHarvester
 
 # The LP token being managed by this strategy
-asset: public(reentrant(immutable(address)))
+asset: reentrant(public(immutable(address)))
 # Contract handling the processing of rewards
 harvester: public(reentrant(address))
 # Convex pool ID for deposits
