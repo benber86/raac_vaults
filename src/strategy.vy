@@ -1,4 +1,5 @@
 # pragma version 0.4.3
+# pragma nonreentrancy on
 
 """
 @title RAAC Convex Strategy
@@ -24,17 +25,17 @@ from src.interfaces import IBasicRewards
 from src.interfaces import IHarvester
 
 # The LP token being managed by this strategy
-asset: public(immutable(address))
+asset: public(reentrant(immutable(address)))
 # Contract handling the processing of rewards
-harvester: public(address)
+harvester: public(reentrant(address))
 # Convex pool ID for deposits
 booster_id: public(immutable(uint256))
 # Convex staking contract for this pool
 rewards_contract: public(immutable(address))
 # Fee taken by the platform (basis points)
-platform_fee: public(uint256)
+platform_fee: public(reentrant(uint256))
 # Fee paid to harvest callers (basis points)
-caller_fee: public(uint256)
+caller_fee: public(reentrant(uint256))
 # Vault contract that owns the strategy
 vault: public(address)
 

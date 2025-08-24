@@ -27,7 +27,7 @@ repos:
         exclude: ^tests/utils/abis/
 
   - repo: https://github.com/benber86/mamushi
-    rev: main
+    rev: v0.0.7
     hooks:
       - id: mamushi
         args: [ --line-length=100 ]
