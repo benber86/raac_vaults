@@ -1,4 +1,5 @@
 # pragma version 0.4.3
+# @license MIT
 
 """
 @title Factory for deploying RAAC stablecoin vaults on top of Convex
@@ -144,6 +145,8 @@ def deploy_new_vault(
     pool_reward_contract: address = pool_info[3]
     pool_asset: address = pool_info[0]
 
+    # Can be problematic if pool symbol is > 20, however Curve pools LP token's
+    # symbol is 10 chars + '-f' suffix.
     pool_asset_symbol: String[20] = staticcall IERC20Detailed(pool_asset).symbol()
     vault_token_name: String[25] = concat("RAAC-", pool_asset_symbol)
 

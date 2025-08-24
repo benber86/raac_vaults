@@ -22,7 +22,7 @@ profile = "black"
 files = ["src/"]
 exclude = ["src/modules/erc4626.vy", "lib/pypi/snekmate", ".venv", "src/interfaces"]
 disabled_rules = ["NTX1", "NTX10"]
-#disabled_rules = ["NTX4", "NTX9", "NTX5"]
+
 
 [tool.uv.sources]
 natrix = { git = "https://github.com/benber86/natrix.git", rev = "cab43666d7f10f30750aa6e52725de53cd451858" }

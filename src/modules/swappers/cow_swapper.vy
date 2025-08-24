@@ -1,4 +1,5 @@
 # pragma version 0.4.3
+# @license MIT
 
 """
 @title CoW Protocol Conditional Order Handler

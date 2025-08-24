@@ -28,7 +28,6 @@ def __init__(_factory: address):
 
 
 @external
-@nonreentrant
 def harvest(
     _caller: address,
     _min_amount_out: uint256,
