@@ -60,17 +60,12 @@ def test_add_harvester_by_owner(vault_factory, accounts):
     new_harvester_impl = curve_harvester.deploy_as_blueprint()
     protocol = "balancer"
 
-    initial_count = 0
-    try:
-        while True:
-            vault_factory.harvesters(initial_count)
-            initial_count += 1
-    except:  # noqa
-        pass
+    initial_count = vault_factory.harvester_count()
 
     with boa.env.prank(owner):
         vault_factory.add_harvester(protocol, new_harvester_impl.address)
 
+    assert vault_factory.harvester_count() == initial_count + 1
     new_harvester = vault_factory.harvesters(initial_count)
     assert new_harvester.protocol == protocol
     assert new_harvester.implementation == new_harvester_impl.address
@@ -101,6 +96,19 @@ def test_harvesters_getter(vault_factory):
     assert harvester_1.protocol == "cow"
     assert harvester_0.implementation != ZERO_ADDRESS
     assert harvester_1.implementation != ZERO_ADDRESS
+
+
+def test_harvester_count(vault_factory):
+    count = vault_factory.harvester_count()
+    assert count == 2
+
+    owner = vault_factory.owner()
+    new_harvester_impl = curve_harvester.deploy_as_blueprint()
+
+    with boa.env.prank(owner):
+        vault_factory.add_harvester("test", new_harvester_impl.address)
+
+    assert vault_factory.harvester_count() == count + 1
 
 
 def test_update_harvester_reverts_empty_address(vault_factory, pyusd_vault):
