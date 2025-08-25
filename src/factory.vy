@@ -75,6 +75,16 @@ vault_to_id: public(HashMap[address, uint256])
 harvesters: public(DynArray[Harvester, 100])
 
 
+@external
+@view
+def harvester_count() -> uint256:
+    """
+    @notice Get the number of registered harvester implementations
+    @return The count of harvesters in the array
+    """
+    return len(self.harvesters)
+
+
 @deploy
 def __init__(
     _vault_impl: address,
