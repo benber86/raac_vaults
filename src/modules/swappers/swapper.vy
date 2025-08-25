@@ -7,10 +7,10 @@ from src.modules import constants
 from src.interfaces import IStrategy
 from src.interfaces import IVaultFactory
 
-factory: public(immutable(address))
-strategy: public(address)
-extra_reward_hook: public(address)
-target_hook: public(address)
+factory: public(reentrant(immutable(address)))
+strategy: public(reentrant(address))
+extra_reward_hook: public(reentrant(address))
+target_hook: public(reentrant(address))
 
 
 event RewardHookUpdated:

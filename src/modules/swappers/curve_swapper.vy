@@ -1,5 +1,4 @@
 # pragma version 0.4.3
-# pragma nonreentrancy on
 # @license MIT
 
 from ethereum.ercs import IERC20
