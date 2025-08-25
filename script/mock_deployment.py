@@ -12,21 +12,21 @@ deployer = moccasin.config.get_active_network().get_default_account()
 
 
 def deploy() -> VyperContract:
-    verifier = get_config().get_active_network().moccasin_verify
     curve_harvester_blueprint = curve_harvester.deploy_as_blueprint()
     cow_harvester_blueprint = cow_harvester.deploy_as_blueprint()
     strategy_blueprint = strategy.deploy_as_blueprint()
     raac_vault_blueprint = raac_vault.deploy_as_blueprint()
     add_liquidity_hook = add_liquidity.deploy()
     factory_deployment = factory.deploy(
-        raac_vault,
-        strategy,
+        raac_vault_blueprint.address,
+        strategy_blueprint.address,
         [
             ("curve", curve_harvester_blueprint.address),
             ("cow", cow_harvester_blueprint.address),
         ],
         TREASURY,
     )
+
     contracts = [
         curve_harvester_blueprint,
         cow_harvester_blueprint,
@@ -37,16 +37,16 @@ def deploy() -> VyperContract:
     ]
 
     for contract in contracts:
-        verifier(contract)
+        verifier = get_config().get_active_network().moccasin_verify(contract)
         verifier.wait_for_verification()
 
     factory_deployment.deploy_new_vault(
         CRVUSD_POOLS["usdt"]["booster_id"],
         1,  # cow harvester index
-        deployer,  # harvest manager
-        deployer,  # strategy manager
+        deployer.address,  # harvest manager
+        deployer.address,  # strategy manager
         ZERO_ADDRESS,
-        add_liquidity_hook,
+        add_liquidity_hook.address,
     )
 
 
