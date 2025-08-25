@@ -1,10 +1,11 @@
+import boa
 import pytest
 from boa.contracts.abi.abi_contract import ABIContractFactory
 
 from src import raac_vault, strategy
 from src.harvesters import cow_harvester, curve_harvester
 from tests.conftest import ZERO_ADDRESS
-from tests.utils.abis import CURVE_STABLESWAP_ABI
+from tests.utils.abis import CURVE_STABLESWAP_ABI, ERC20_ABI
 from tests.utils.constants import CRVUSD_POOLS
 
 
@@ -179,3 +180,62 @@ def test_cow_vault_deployment(
     assert vault_contract.strategy() == strategy_address
     assert vault_contract.symbol() == str(CRVUSD_POOLS["pyusd"]["booster_id"])
     assert vault_contract.name() == "RAAC-" + crvusd_pool.symbol()[:20]
+
+
+def test_vault_deployment_with_seed(
+    vault_factory,
+    harvest_manager,
+    strategy_manager,
+    add_liquidity_hook,
+    crvusd_pool,
+    funded_accounts,
+):
+    deployer = funded_accounts[0]
+    seed_amount = 1000 * 10**18
+
+    lp_token = ABIContractFactory("ERC20", ERC20_ABI).at(crvusd_pool.address)
+
+    with boa.env.prank(deployer):
+        lp_token.approve(vault_factory.address, seed_amount)
+
+        vault_address, strategy_address, harvester_address = (
+            vault_factory.deploy_new_vault(
+                CRVUSD_POOLS["pyusd"]["booster_id"],
+                0,
+                harvest_manager,
+                strategy_manager,
+                ZERO_ADDRESS,
+                add_liquidity_hook.address,
+                seed_amount,
+            )
+        )
+
+    vault_contract = raac_vault.at(vault_address)
+
+    assert vault_contract.balanceOf(deployer) == seed_amount
+    assert vault_contract.totalSupply() == seed_amount
+    assert lp_token.balanceOf(vault_address) == 0
+    assert vault_contract.totalAssets() > 0
+
+
+def test_vault_deployment_with_seed_reverts_without_approval(
+    vault_factory,
+    harvest_manager,
+    strategy_manager,
+    add_liquidity_hook,
+    accounts,
+):
+    deployer = accounts[0]
+    seed_amount = 1000 * 10**18
+
+    with boa.env.prank(deployer):
+        with pytest.raises(Exception):
+            vault_factory.deploy_new_vault(
+                CRVUSD_POOLS["pyusd"]["booster_id"],
+                0,
+                harvest_manager,
+                strategy_manager,
+                ZERO_ADDRESS,
+                add_liquidity_hook.address,
+                seed_amount,
+            )

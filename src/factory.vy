@@ -23,6 +23,7 @@ from src.interfaces import IBooster
 from src.interfaces import IHarvester
 from snekmate.auth import ownable
 from src import strategy
+from ethereum.ercs import IERC20
 
 
 interface IERC20Detailed:
@@ -159,6 +160,7 @@ def deploy_new_vault(
     _strategy_manager: address,
     _harvester_reward_hook: address,
     _harvester_target_hook: address,
+    _seed: uint256 = 0,
 ) -> (address, address, address):
     """
     @notice Deploys a new permissioned vault and its associated strategy and harvester contracts
@@ -167,12 +169,15 @@ def deploy_new_vault(
         - Ensures the selected pool is active via Booster.
         - Vault and strategy token metadata are derived from the underlying asset and pool ID.
         - Hooks for extra reward and target can be set optionally.
+        - If seed > 0, caller must have approved factory to spend the asset before calling.
     @param _booster_id The Convex Booster id of the pool the vault will autocompound
     @param _harvester_index Index of the harvester implementation in the harvesters array
     @param _harvest_manager Address who will be authorized to execute harvests
     @param _strategy_manager Address who will be authorized to configure the strategy
     @param _harvester_reward_hook Address of extra reward hook for harvester (optional).
     @param _harvester_target_hook Address of target hook for harvester (optional).
+    @param _seed Initial deposit amount to prevent inflation attacks through donation (optional).
+               If > 0, transfers asset from msg.sender and deposits into vault.
     @return vault The deployed vault contract address.
     @return strategy The deployed strategy contract address.
     @return harvester The deployed harvester contract address.
@@ -180,6 +185,7 @@ def deploy_new_vault(
         - If the specified pool is inactive (shut down).
         - If the pool id does not exist in the Booster.
         - If the harvester index is invalid.
+        - If seed > 0 and caller hasn't approved factory for asset transfer.
     """
 
     # Get harvester implementation by index
@@ -275,6 +281,11 @@ def deploy_new_vault(
         harvester=deployed_harvester,
         token=pool_asset,
     )
+
+    if _seed > 0:
+        assert extcall IERC20(pool_asset).transferFrom(msg.sender, self, _seed)
+        assert extcall IERC20(pool_asset).approve(deployed_vault, _seed)
+        extcall IVault(deployed_vault).deposit(_seed, msg.sender)
 
     return deployed_vault, deployed_strategy, deployed_harvester
 
