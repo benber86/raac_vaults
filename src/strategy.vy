@@ -26,7 +26,7 @@ from src.interfaces import IBasicRewards
 from src.interfaces import IHarvester
 
 # The LP token being managed by this strategy
-asset: reentrant(public(immutable(address)))
+asset: public(reentrant(immutable(address)))
 # Contract handling the processing of rewards
 harvester: public(reentrant(address))
 # Convex pool ID for deposits
@@ -38,7 +38,7 @@ platform_fee: public(reentrant(uint256))
 # Fee paid to harvest callers (basis points)
 caller_fee: public(reentrant(uint256))
 # Vault contract that owns the strategy
-vault: public(address)
+vault: public(reentrant(address))
 
 
 event HarvesterUpdated:
