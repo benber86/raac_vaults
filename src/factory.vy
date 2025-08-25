@@ -41,6 +41,11 @@ struct VaultRecord:
     token: address
 
 
+struct Harvester:
+    protocol: String[32]
+    implementation: address
+
+
 event VaultDeployed:
     id: uint256
     vault: address
@@ -53,9 +58,13 @@ event TreasuryUpdated:
     treasury: address
 
 
+event HarvesterAdded:
+    protocol: String[32]
+    implementation: address
+
+
 VAULT_IMPLEMENTATION: public(immutable(address))
 STRATEGY_IMPLEMENTATION: public(immutable(address))
-HARVESTER_IMPLEMENTATION: public(immutable(address))
 
 treasury: public(address)
 
@@ -63,30 +72,37 @@ vault_registry: public(HashMap[uint256, VaultRecord])
 vaults_deployed: public(uint256)
 vault_to_id: public(HashMap[address, uint256])
 
+harvesters: public(DynArray[Harvester, 100])
+
 
 @deploy
 def __init__(
     _vault_impl: address,
     _strategy_impl: address,
-    _harvester_impl: address,
+    _harvesters: DynArray[Harvester, 100],
     _treasury: address,
 ):
     """
     @param _vault_impl Address of the vault implementation contract for blueprint deployment
     @param _strategy_impl Address of the strategy implementation contract for blueprint deployment
-    @param _harvester_impl Address of the harvester implementation contract for blueprint deployment
+    @param _harvesters Array of harvester implementations with their protocol names
     @param _treasury Address where platform fees will be collected
     Implementation Contracts:
     - Vault: Manages user deposits/withdrawals and interfaces with strategies
     - Strategy: Handles Convex Finance integration and reward collection
-    - Harvester: Processes rewards, swaps tokens, and distributes fees
+    - Harvesters: Process rewards, swap tokens, and distribute fees for different protocols
     """
     ownable.__init__()
     ownable._transfer_ownership(msg.sender)
 
     VAULT_IMPLEMENTATION = _vault_impl
     STRATEGY_IMPLEMENTATION = _strategy_impl
-    HARVESTER_IMPLEMENTATION = _harvester_impl
+
+    # Add initial harvesters
+    for i: uint256 in range(100):
+        if i == len(_harvesters):
+            break
+        self._add_harvester(_harvesters[i].protocol, _harvesters[i].implementation)
 
     self.treasury = _treasury
 
@@ -102,9 +118,33 @@ def set_treasury(_new_treasury: address):
     log TreasuryUpdated(treasury=_new_treasury)
 
 
+@internal
+def _add_harvester(_protocol: String[32], _implementation: address):
+    """
+    @notice Internal function to add a new harvester implementation
+    @param _protocol Protocol name for the harvester (e.g., "curve", "cow")
+    @param _implementation Address of the harvester implementation contract
+    """
+    assert _implementation != empty(address), "Implementation cannot be empty"
+    self.harvesters.append(Harvester(protocol=_protocol, implementation=_implementation))
+    log HarvesterAdded(protocol=_protocol, implementation=_implementation)
+
+
+@external
+def add_harvester(_protocol: String[32], _implementation: address):
+    """
+    @notice Add a new harvester implementation (owner only)
+    @param _protocol Protocol name for the harvester (e.g., "curve", "cow", "balancer")
+    @param _implementation Address of the harvester implementation contract
+    """
+    ownable._check_owner()
+    self._add_harvester(_protocol, _implementation)
+
+
 @external
 def deploy_new_vault(
     _booster_id: uint256,
+    _harvester_index: uint256,
     _harvest_manager: address,
     _strategy_manager: address,
     _harvester_reward_hook: address,
@@ -118,6 +158,7 @@ def deploy_new_vault(
         - Vault and strategy token metadata are derived from the underlying asset and pool ID.
         - Hooks for extra reward and target can be set optionally.
     @param _booster_id The Convex Booster id of the pool the vault will autocompound
+    @param _harvester_index Index of the harvester implementation in the harvesters array
     @param _harvest_manager Address who will be authorized to execute harvests
     @param _strategy_manager Address who will be authorized to configure the strategy
     @param _harvester_reward_hook Address of extra reward hook for harvester (optional).
@@ -128,9 +169,14 @@ def deploy_new_vault(
     @custom:reverts
         - If the specified pool is inactive (shut down).
         - If the pool id does not exist in the Booster.
+        - If the harvester index is invalid.
     """
 
-    deployed_harvester: address = create_from_blueprint(HARVESTER_IMPLEMENTATION, self)
+    # Get harvester implementation by index
+    assert _harvester_index < len(self.harvesters), "Invalid harvester index"
+    harvester_impl: address = self.harvesters[_harvester_index].implementation
+
+    deployed_harvester: address = create_from_blueprint(harvester_impl, self)
     # transaction will revert if id booster is incorrect
 
 
@@ -225,6 +271,7 @@ def deploy_new_vault(
 
 @external
 def update_harvester(_new_harvester: address):
+    assert _new_harvester != empty(address), "Invalid harvester"
     vault_id: uint256 = self.vault_to_id[msg.sender]
     assert self.vault_registry[vault_id].vault == msg.sender, "Vault only"
     self.vault_registry[vault_id] = VaultRecord(

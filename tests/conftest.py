@@ -184,12 +184,17 @@ def vault_factory(
     raac_vault_blueprint,
     strategy_blueprint,
     harvester_blueprint,
+    cow_harvester_blueprint,
     treasury,
 ):
+    harvesters = [
+        ("curve", harvester_blueprint.address),
+        ("cow", cow_harvester_blueprint.address),
+    ]
     return factory.deploy(
         raac_vault_blueprint,
         strategy_blueprint,
-        harvester_blueprint,
+        harvesters,
         treasury,
     )
 
@@ -205,6 +210,7 @@ def deploy_permissioned_vault_for_pool(
     ) -> tuple:
         return vault_factory.deploy_new_vault(
             CRVUSD_POOLS[pool_name]["booster_id"],
+            0,  # curve harvester index
             harvest_manager,
             strategy_manager,
             extra_reward_hook,
@@ -359,31 +365,17 @@ def cow_harvester_blueprint() -> VyperContract:
 
 
 @pytest.fixture(scope="session")
-def cow_vault_factory(
-    raac_vault_blueprint,
-    strategy_blueprint,
-    cow_harvester_blueprint,
-    treasury,
-):
-    return factory.deploy(
-        raac_vault_blueprint,
-        strategy_blueprint,
-        cow_harvester_blueprint,
-        treasury,
-    )
-
-
-@pytest.fixture(scope="session")
 def deploy_cow_vault_for_pool(
-    cow_vault_factory, harvest_manager, strategy_manager
+    vault_factory, harvest_manager, strategy_manager
 ) -> Callable[[str, str, str], tuple]:
     def inner(
         pool_name: str,
         extra_reward_hook: str = ZERO_ADDRESS,
         target_hook: str = ZERO_ADDRESS,
     ) -> tuple:
-        return cow_vault_factory.deploy_new_vault(
+        return vault_factory.deploy_new_vault(
             CRVUSD_POOLS[pool_name]["booster_id"],
+            1,  # cow harvester index
             harvest_manager,
             strategy_manager,
             extra_reward_hook,
