@@ -1005,7 +1005,7 @@ wheels = [
 
 [[package]]
 name = "moccasin"
-version = "0.4.0"
+version = "0.4.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "ipykernel" },
@@ -1020,9 +1020,9 @@ dependencies = [
     { name = "uv" },
     { name = "vyper" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/ba/de/8234cf1b537f7103e12f63e7259f01fec3ce44d6616565cd18df1d60196a/moccasin-0.4.0.tar.gz", hash = "sha256:f8d58bc7e1f73e07b628950e4d39d0c8f895489f0c44134eab036ea4054c5530", size = 641146 }
+sdist = { url = "https://files.pythonhosted.org/packages/02/b5/cd04f52ccae7ab0ea48eb9da9c3b8f30195cada6561ad29372e3d06ced9f/moccasin-0.4.2.tar.gz", hash = "sha256:34e9736082ce05465327fccd705299f4d37d450571522eab5993f22fde165e65", size = 672679 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/e7/cd/dba52cfc32b3b4cca4e9a9064335168ac4777f9ed582665d614c33f5f119/moccasin-0.4.0-py3-none-any.whl", hash = "sha256:f52f70c114e80a918426b09eea2098e83cde5bfceced61f9fdb58eb9825fc35e", size = 70966 },
+    { url = "https://files.pythonhosted.org/packages/b4/3c/62ea41feb366705c49580d379a9f73d4c01e4007a0bb732666c3c0d634a5/moccasin-0.4.2-py3-none-any.whl", hash = "sha256:5eb40d2a0d250f97c7919e03985efb969359f559c2952eed8f6fd99fb4ad59b8", size = 102586 },
 ]
 
 [[package]]
@@ -1529,10 +1529,10 @@ requires-dist = [
     { name = "black", specifier = ">=25.1.0" },
     { name = "eth-utils", specifier = ">=5.3.0" },
     { name = "mamushi", specifier = ">=0.0.5" },
-    { name = "moccasin", specifier = "==0.4.0" },
+    { name = "moccasin", specifier = "==0.4.2" },
     { name = "natrix", git = "https://github.com/benber86/natrix.git?rev=cab43666d7f10f30750aa6e52725de53cd451858" },
     { name = "pre-commit", specifier = ">=4.2.0" },
-    { name = "titanoboa", specifier = "==0.2.7" },
+    { name = "titanoboa", git = "https://github.com/vyperlang/titanoboa.git?rev=ff16d2d295b8ce60b8a45e3ced06784e8f404afb" },
     { name = "vyper", specifier = "==0.4.3" },
 ]
 
@@ -1661,7 +1661,7 @@ wheels = [
 [[package]]
 name = "titanoboa"
 version = "0.2.7"
-source = { registry = "https://pypi.org/simple" }
+source = { git = "https://github.com/vyperlang/titanoboa.git?rev=ff16d2d295b8ce60b8a45e3ced06784e8f404afb#ff16d2d295b8ce60b8a45e3ced06784e8f404afb" }
 dependencies = [
     { name = "eth-abi" },
     { name = "eth-account" },
@@ -1677,10 +1677,6 @@ dependencies = [
     { name = "typing-extensions" },
     { name = "vvm" },
     { name = "vyper" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/9c/85/2cfd05b649cf173714ea7a2b3597228b7a577cab7fe4696e67879b8784b7/titanoboa-0.2.7.tar.gz", hash = "sha256:4fb931747bf9beb05ea39b149878bb7d89525bcfacf1a903e4d14da91f7c49de", size = 99921 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/da/fd/25ccd329bb68c2251b1fbb30aa799cfaca67ab262b2da05c5997e6b73e38/titanoboa-0.2.7-py3-none-any.whl", hash = "sha256:75771f5e8183c073f2c37d8925f583abd2c6b56eae4d087dbf1e33f809ea7ca5", size = 111582 },
 ]
 
 [[package]]
