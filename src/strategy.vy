@@ -5,7 +5,7 @@
 """
 @title RAAC Convex Strategy
 @custom:contract-name raac_convex_strategy
-@author benny
+@author RAAC
 @notice A strategy contract for managing Convex Finance positions
 @dev This contract acts as an intermediary between a vault and the Convex Booster,
      handling deposits, withdrawals, reward collection, and harvesting operations.

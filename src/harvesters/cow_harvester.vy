@@ -1,5 +1,11 @@
 # pragma version 0.4.3
-# @license MIT
+"""
+@title RAAC CoW Harvester
+@custom:contract-name raac_cow_harvester
+@notice Harvester contract to compound RAAC vault rewards with CoW Swap
+@license MIT
+@author RAAC
+"""
 
 from src.modules.swappers import cow_swapper
 from src.modules import constants

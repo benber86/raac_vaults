@@ -1,6 +1,17 @@
 # pragma version 0.4.3
 # @license MIT
 
+"""
+@title RAAC Curve Swapper Module
+@author RAAC
+@notice Swaps CRV and CVX rewards to crvUSD using Curve pools for RAAC harvesters
+@dev This module handles the reward token swapping process for Curve-based harvesting.
+     It swaps CVX tokens to ETH via CVX/ETH pool, CRV tokens to ETH via TriCrypto pool,
+     then converts the accumulated ETH to crvUSD via TriCrypto pool. The module includes
+     hooks for handling extra reward tokens and target asset conversion. All swaps use
+     minimal slippage protection as the final slippage check occurs at the target asset level.
+"""
+
 from ethereum.ercs import IERC20
 from src.interfaces import ICurveV2Pool
 from src.interfaces import ICurveTriCryptoFactoryNG

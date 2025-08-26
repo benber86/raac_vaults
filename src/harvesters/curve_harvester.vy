@@ -1,5 +1,11 @@
 # pragma version 0.4.3
-# @license MIT
+"""
+@title RAAC Curve Harvester
+@custom:contract-name raac_curve_harvester
+@notice Harvester contract to compound RAAC vault rewards with Curve pools
+@license MIT
+@author RAAC
+"""
 
 from src.modules.swappers import curve_swapper
 from src.modules import constants
