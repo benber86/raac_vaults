@@ -1,12 +1,11 @@
 # pragma version 0.4.3
 # pragma nonreentrancy on
-# @license MIT
 
 """
 @title CoW Protocol Conditional Order Handler
 @custom:contract-name cow_conditional_order
 @license MIT
-@author benny
+@author RAAC
 @notice A contract for creating and managing CoW Protocol conditional orders
 @dev CowSwap swaps are asynchronous meaning that harvests can't be done atomically
      Instead, the harvester will use rewards from the previous harvest to forward

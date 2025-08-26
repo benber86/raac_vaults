@@ -1,9 +1,10 @@
 # pragma version 0.4.3
 """
-@title RAAC Vault hook to add one-sided liquidity to an NG Curve pool
+@title Liquidity Hook NG
 @custom:contract-name raac_add_liquidity_ng_hook
+@notice RAAC Vault hook to add one-sided liquidity to an NG Curve pool
 @license MIT
-@author benny
+@author RAAC
 """
 
 from ethereum.ercs import IERC20

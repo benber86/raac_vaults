@@ -2,6 +2,19 @@
 # pragma nonreentrancy on
 # @license MIT
 
+"""
+@title RAAC Vault
+@custom:contract-name raac_vault
+@author RAAC
+@notice ERC4626 compliant vault for autocompounding Convex Finance yield
+@dev This contract implements the ERC4626 standard for tokenized vaults and manages
+     user deposits/withdrawals while delegating strategy execution to a separate
+     strategy contract. It provides role-based access control for harvesting and
+     strategy management operations. The vault automatically compounds rewards from
+     the underlying Convex Finance positions through coordinated harvest operations.
+
+"""
+
 from ethereum.ercs import IERC20
 from src.modules import vault
 from src.modules import constants

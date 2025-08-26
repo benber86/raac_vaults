@@ -1,9 +1,10 @@
 # pragma version 0.4.3
 """
-@title RAAC Vault hook to process extra reward tokens using Curve Router
+@title Extra Rewards Hook
 @custom:contract-name raac_extra_reward_hook
+@notice RAAC Vault hook to process extra reward tokens using Curve Router
 @license MIT
-@author benny
+@author RAAC
 """
 
 from ethereum.ercs import IERC20

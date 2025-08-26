@@ -1,11 +1,10 @@
 # pragma version 0.4.3
-# @license MIT
 
 """
-@title Factory for deploying RAAC stablecoin vaults on top of Convex
+@title RAAC Stable Vault Factory
 @custom:contract-name raac_vault_factory
 @license MIT
-@author benny
+@author RAAC
 @notice Deploys ERC4626 vaults to autocompound yield from Convex positions
 @dev Factory creates three interconnected contracts per deployment:
      - Vault: Manages user deposits/withdrawals with ERC4626 compliance
