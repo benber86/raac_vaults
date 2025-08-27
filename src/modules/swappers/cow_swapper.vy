@@ -42,6 +42,7 @@ exports: (
     swapper.transfer_to_reward_hook,
     swapper.transfer_to_target_hook,
     swapper.treasury,
+    swapper.forward_tokens,
     swapper.__default__,
 )
 
@@ -134,10 +135,11 @@ BALANCE_ERC20: constant(bytes32) = keccak256("erc20")
 APP_DATA: constant(bytes32) = keccak256("RAAC")
 
 SUPPORTED_INTERFACES: constant(bytes4[3]) = [
-    0x1626ba7e,  # isValidSignature(bytes32,bytes)
+    0x1626ba7e,  # isValidSignature(bytes32,bytes) / ERC1271_MAGIC_VALUE
     0x01ffc9a7,  # supportsInterface(bytes4)
     0xb8296fc4,  # getTradeableOrder(address,address,bytes32,bytes,bytes)
 ]
+SIGNATURE_VERIFIER_MUXER_INTERFACE: constant(bytes4) = 0x62af8dc2
 DAY: constant(uint256) = 60 * 60 * 24
 delay: public(uint256)
 owner: public(address)
@@ -443,6 +445,8 @@ def supportsInterface(_interface_id: bytes4) -> bool:
     @dev Required for ERC-165 compliance
     @param _interface_id The interface identifier to check
     """
+    # Avoid InvalidFallbackHandler error in ComposableCow and switch to EIP-1271
+    assert _interface_id != SIGNATURE_VERIFIER_MUXER_INTERFACE
     return _interface_id in SUPPORTED_INTERFACES
 
 

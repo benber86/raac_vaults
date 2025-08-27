@@ -15,6 +15,7 @@ initializes: curve_swapper
 exports: (
     curve_swapper.extra_reward_hook,
     curve_swapper.factory,
+    curve_swapper.forward_tokens,
     curve_swapper.set_approvals,
     curve_swapper.set_extra_reward_hook,
     curve_swapper.set_strategy,

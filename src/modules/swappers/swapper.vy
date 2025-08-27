@@ -145,6 +145,28 @@ def _collect_fee(
 
 
 @external
+def forward_tokens(
+    _tokens: DynArray[address, constants.MAX_REWARD_TOKENS + 2], _recipient: address
+):
+    """
+    @notice Forward specified tokens to recipient address for harvester migration
+    @param _tokens Array of token addresses to forward
+    @param _recipient Address to receive the tokens
+    @dev Only callable by strategy for harvester migration purposes
+    """
+    assert msg.sender == self.strategy, "Strategy only"
+    assert _recipient != empty(address), "Invalid recipient"
+
+    for i: uint256 in range(constants.MAX_REWARD_TOKENS + 2):
+        if i == len(_tokens):
+            break
+        token: address = _tokens[i]
+        balance: uint256 = staticcall IERC20(token).balanceOf(self)
+        if balance > 0:
+            assert extcall IERC20(token).transfer(_recipient, balance)
+
+
+@external
 @payable
 def __default__():
     pass

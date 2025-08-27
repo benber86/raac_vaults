@@ -32,7 +32,7 @@ harvester: public(reentrant(address))
 # Convex pool ID for deposits
 booster_id: public(immutable(uint256))
 # Convex staking contract for this pool
-rewards_contract: public(immutable(address))
+rewards_contract: public(reentrant(immutable(address)))
 # Fee taken by the platform (basis points)
 platform_fee: public(reentrant(uint256))
 # Fee paid to harvest callers (basis points)
@@ -272,3 +272,17 @@ def harvest(
     )
     if target_asset_balance > 0:
         self._deposit(target_asset_balance)
+
+
+@external
+def forward_tokens(
+    _tokens: DynArray[address, constants.MAX_REWARD_TOKENS + 2], _recipient: address
+):
+    """
+    @notice Forward tokens from current harvester to recipient for migration
+    @param _tokens Array of token addresses to forward
+    @param _recipient Address to receive tokens
+    @dev Only callable by vault for harvester migration
+    """
+    assert msg.sender == self.vault, "Vault only"
+    extcall IHarvester(self.harvester).forward_tokens(_tokens, _recipient)

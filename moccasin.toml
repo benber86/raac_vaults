@@ -13,7 +13,7 @@ default_network_name = "mainnet-fork"
 
 [networks.mainnet-fork]
 url = "${MAINNET_RPC_URL}"
-explorer_uri = "https://api.etherscan.io/v2/api"
+explorer_uri = "https://api.etherscan.com/api/"
 explorer_type = "etherscan"
 explorer_api_key="${ETHERSCAN_TOKEN}"
 chain_id = 1

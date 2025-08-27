@@ -93,3 +93,8 @@ def vault() -> address:
 @external
 def total_assets() -> uint256:
     ...
+
+
+@external
+def forward_tokens(_tokens: DynArray[address, 12], _recipient: address):
+    ...

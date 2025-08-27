@@ -20,6 +20,7 @@ exports: (
     cow_swapper.delay,
     cow_swapper.extra_reward_hook,
     cow_swapper.factory,
+    cow_swapper.forward_tokens,
     cow_swapper.getTradeableOrder,
     cow_swapper.get_order_info,
     cow_swapper.isValidSignature,
