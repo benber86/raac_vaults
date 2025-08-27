@@ -5,6 +5,7 @@
 from ethereum.ercs import IERC20
 from snekmate.auth import access_control
 from src.modules import erc4626
+from src.modules import constants
 from src.interfaces import IStrategy
 from src.interfaces import IVaultFactory
 from src.interfaces import IHarvester
@@ -103,9 +104,18 @@ def set_caller_fee(_new_caller_fee: uint256):
 
 
 @external
-def update_harvester(_new_harvester: address):
+def update_harvester(
+    _new_harvester: address,
+    _migration_tokens: DynArray[address, constants.MAX_REWARD_TOKENS + 2] = [],
+):
     assert access_control.hasRole[STRATEGY_MANAGER_ROLE][msg.sender]
     harvester: address = staticcall IStrategy(erc4626.strategy).harvester()
+
+    # Forward any stranded tokens from old to new harvester
+    # This is particularly necessary for CoW harvesters where harvest rewards are delayed
+    if len(_migration_tokens) > 0:
+        extcall IStrategy(erc4626.strategy).forward_tokens(_migration_tokens, _new_harvester)
+
     factory: address = staticcall IHarvester(harvester).factory()
     extcall IStrategy(erc4626.strategy).update_harvester(_new_harvester)
     extcall IVaultFactory(factory).update_harvester(_new_harvester)

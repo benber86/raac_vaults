@@ -216,3 +216,29 @@ def test_strategy_set_vault_reverts_zero_address():
     )
     with boa.reverts():
         fresh_strategy.set_vault(ZERO_ADDRESS)
+
+
+def test_strategy_forward_tokens(test_permissioned_vault, accounts):
+    vault_addr, strategy_addr, harvester_addr = test_permissioned_vault
+
+    strategy_contract = strategy.at(strategy_addr)
+    recipient = accounts[5]
+    tokens_to_forward = [accounts[6], accounts[7]]
+
+    with boa.env.prank(vault_addr):
+        strategy_contract.forward_tokens(tokens_to_forward, recipient)
+
+
+def test_strategy_forward_tokens_reverts_non_vault(
+    test_permissioned_vault, accounts
+):
+    vault_addr, strategy_addr, harvester_addr = test_permissioned_vault
+
+    strategy_contract = strategy.at(strategy_addr)
+    non_vault = accounts[1]
+    recipient = accounts[5]
+    tokens_to_forward = [accounts[6], accounts[7]]
+
+    with boa.env.prank(non_vault):
+        with boa.reverts():
+            strategy_contract.forward_tokens(tokens_to_forward, recipient)

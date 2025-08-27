@@ -316,3 +316,30 @@ class TestAccessControlFuzzing:
         )
         with boa.env.prank(caller):
             strategy_contract.set_approvals()
+
+    @given(
+        caller=boa_st.strategy("address"),
+        recipient=boa_st.strategy("address"),
+        tokens=st.lists(boa_st.strategy("address"), min_size=1, max_size=12),
+    )
+    @settings(max_examples=30, deadline=30000)
+    def test_forward_tokens_unauthorized(
+        self, pyusd_vault, caller, recipient, tokens
+    ):
+        vault, lp_token, strategy_contract, harvester = (
+            self._setup_vault_components(pyusd_vault)
+        )
+        assume(caller != vault.address)
+        assume(recipient != ZERO_ADDRESS)
+        with boa.env.prank(caller):
+            with boa.reverts("Vault only"):
+                strategy_contract.forward_tokens(tokens, recipient)
+
+    def test_forward_tokens_authorized(self, pyusd_vault):
+        vault, lp_token, strategy_contract, harvester = (
+            self._setup_vault_components(pyusd_vault)
+        )
+        recipient = boa.env.generate_address()
+        tokens = [boa.env.generate_address(), boa.env.generate_address()]
+        with boa.env.prank(vault.address):
+            strategy_contract.forward_tokens(tokens, recipient)

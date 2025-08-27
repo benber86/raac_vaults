@@ -76,6 +76,11 @@ def harvest(
     ...
 
 
+@external
+def forward_tokens(_tokens: DynArray[address, 12], _recipient: address):
+    ...
+
+
 @view
 @external
 def allowed_slippage() -> uint256:

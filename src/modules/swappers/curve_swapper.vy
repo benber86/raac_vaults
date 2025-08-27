@@ -32,6 +32,7 @@ exports: (
     swapper.transfer_to_reward_hook,
     swapper.transfer_to_target_hook,
     swapper.treasury,
+    swapper.forward_tokens,
     swapper.__default__,
 )
 
