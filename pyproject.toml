@@ -8,10 +8,11 @@ dependencies = [
     "black>=25.1.0",
     "eth-utils>=5.3.0",
     "mamushi>=0.0.5",
-    "moccasin>=0.4.0",
-    "natrix==0.1.6",
+    "moccasin==0.4.2",
+    "natrix==0.1.9",
     "pre-commit>=4.2.0",
-    "vyper==0.4.1",
+    "titanoboa==0.2.7",
+    "vyper==0.4.3",
 ]
 
 [tool.isort]
@@ -19,6 +20,10 @@ profile = "black"
 
 [tool.natrix]
 files = ["src/"]
+exclude = ["src/modules/erc4626.vy", "lib/pypi/snekmate", ".venv", "src/interfaces"]
+disabled_rules = ["NTX1", "NTX10"]
 
 
-disabled_rules = ["NTX4", "NTX9", "NTX5"]
+[tool.uv.sources]
+natrix = { git = "https://github.com/benber86/natrix.git", rev = "cab43666d7f10f30750aa6e52725de53cd451858" }
+titanoboa = { git = "https://github.com/vyperlang/titanoboa.git", rev = "ff16d2d295b8ce60b8a45e3ced06784e8f404afb" }

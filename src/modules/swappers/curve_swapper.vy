@@ -1,16 +1,40 @@
-# pragma version ^0.4.1
+# pragma version 0.4.3
 # @license MIT
 
+"""
+@title RAAC Curve Swapper Module
+@author RAAC
+@notice Swaps CRV and CVX rewards to crvUSD using Curve pools for RAAC harvesters
+@dev This module handles the reward token swapping process for Curve-based harvesting.
+     It swaps CVX tokens to ETH via CVX/ETH pool, CRV tokens to ETH via TriCrypto pool,
+     then converts the accumulated ETH to crvUSD via TriCrypto pool. The module includes
+     hooks for handling extra reward tokens and target asset conversion. All swaps use
+     minimal slippage protection as the final slippage check occurs at the target asset level.
+"""
+
 from ethereum.ercs import IERC20
-from ..interfaces import ICurveV2Pool
-from ..interfaces import ICurveTriCryptoFactoryNG
-from ..interfaces import IStrategy
-from . import constants
-from . import swapper
+from src.interfaces import ICurveV2Pool
+from src.interfaces import ICurveTriCryptoFactoryNG
+from src.interfaces import IStrategy
+from src.modules import constants
+from src.modules.swappers import swapper
 
 initializes: swapper
 
-exports: swapper.__interface__
+exports: (
+    swapper.extra_reward_hook,
+    swapper.factory,
+    swapper.set_extra_reward_hook,
+    swapper.set_strategy,
+    swapper.set_target_hook,
+    swapper.strategy,
+    swapper.target_hook,
+    swapper.transfer_to_reward_hook,
+    swapper.transfer_to_target_hook,
+    swapper.treasury,
+    swapper.forward_tokens,
+    swapper.__default__,
+)
 
 
 @deploy
@@ -84,6 +108,7 @@ def _swap_rewards_to_eth() -> uint256:
     crv_balance: uint256 = staticcall IERC20(constants.CRV_TOKEN).balanceOf(self)
     eth_from_crv: uint256 = 0
     eth_from_cvx: uint256 = 0
+    # min_amounts_out are set to 1 as slippage check is done on the final crvUSD amount
     if cvx_balance > 0:
         eth_from_cvx = self._cvx_to_eth(cvx_balance, 1)
     if crv_balance > 0:
@@ -119,8 +144,14 @@ def _swap(
 
     crvusd_received: uint256 = self._eth_to_crvusd(self.balance, 1)
 
+    # Pay the platform fee in crvUSD to the treasury
+    platform_fee: uint256 = staticcall IStrategy(swapper.strategy).platform_fee()
+    treasury: address = swapper._treasury()
+    swapper._collect_fee(treasury, constants.CRVUSD_TOKEN, crvusd_received, platform_fee)
+
     # Pay the caller incentive in crvUSD
-    swapper._pay_out_caller_fee(_caller, constants.CRVUSD_TOKEN, crvusd_received)
+    caller_fee: uint256 = staticcall IStrategy(swapper.strategy).caller_fee()
+    swapper._collect_fee(_caller, constants.CRVUSD_TOKEN, crvusd_received, caller_fee)
 
     # if we have a hook contract to handle further operations
     if swapper.target_hook != empty(address):
@@ -130,10 +161,12 @@ def _swap(
             value=0,
         )
 
-    target_asset: address = staticcall IStrategy(swapper.fee_collector.strategy).asset()
+    target_asset: address = staticcall IStrategy(swapper.strategy).asset()
     target_asset_balance: uint256 = staticcall IERC20(target_asset).balanceOf(self)
     assert target_asset_balance > _min_amount_out, "Slippage"
     assert extcall IERC20(target_asset).transfer(
-        swapper.fee_collector.strategy, target_asset_balance, default_return_value=True
+        swapper.strategy,
+        target_asset_balance,
+        default_return_value=True,
     )
     return target_asset_balance

@@ -1,23 +1,27 @@
-# pragma version ^0.4.1
+# pragma version 0.4.3
 """
-@title RAAC Vault hook to process extra reward tokens using Curve Router
+@title Extra Rewards Hook
 @custom:contract-name raac_extra_reward_hook
+@notice RAAC Vault hook to process extra reward tokens using Curve Router
 @license MIT
-@author benny
+@author RAAC
 """
 
 from ethereum.ercs import IERC20
-from ..interfaces import ICurveRouter
-from ..interfaces import IHarvester
-from ..interfaces import IStrategy
-from ..modules import constants
+from src.interfaces import ICurveRouter
+from src.interfaces import IHarvester
+from src.interfaces import IStrategy
+from src.modules import constants
 
 CURVE_ROUTER: constant(address) = 0x45312ea0eFf7E09C83CBE249fa1d7598c4C8cd4e
 
 
 @external
 def process_extra_rewards(
-    _token: address, _route: address[11], _swap_params: uint256[5][5], _pools: address[5]
+    _token: address,
+    _route: address[11],
+    _swap_params: uint256[5][5],
+    _pools: address[5],
 ):
     """
     @notice Process extra reward tokens by swapping them to crvUSD via Curve Router and applying platform fees
@@ -42,7 +46,12 @@ def process_extra_rewards(
 
     # Execute swap via Curve Router
     crvusd_received: uint256 = extcall ICurveRouter(CURVE_ROUTER).exchange(
-        _route, _swap_params, amount, 0, _pools, self  # We'll handle slippage after fees
+        _route,
+        _swap_params,
+        amount,
+        0,
+        _pools,
+        self,  # We'll handle slippage after fees
     )
 
     # Apply platform fee

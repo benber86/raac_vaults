@@ -1,9 +1,11 @@
-# pragma version ^0.4.1
+# pragma version 0.4.3
+# pragma nonreentrancy on
+# @license MIT
 
 """
 @title RAAC Convex Strategy
 @custom:contract-name raac_convex_strategy
-@author benny
+@author RAAC
 @notice A strategy contract for managing Convex Finance positions
 @dev This contract acts as an intermediary between a vault and the Convex Booster,
      handling deposits, withdrawals, reward collection, and harvesting operations.
@@ -17,26 +19,26 @@
 """
 
 from ethereum.ercs import IERC20
-from modules import constants
-from interfaces import IBooster
-from interfaces import IConvexStaking
-from interfaces import IBasicRewards
-from interfaces import IHarvester
+from src.modules import constants
+from src.interfaces import IBooster
+from src.interfaces import IConvexStaking
+from src.interfaces import IBasicRewards
+from src.interfaces import IHarvester
 
 # The LP token being managed by this strategy
-asset: public(immutable(address))
+asset: public(reentrant(immutable(address)))
 # Contract handling the processing of rewards
-harvester: public(address)
+harvester: public(reentrant(address))
 # Convex pool ID for deposits
 booster_id: public(immutable(uint256))
 # Convex staking contract for this pool
 rewards_contract: public(immutable(address))
 # Fee taken by the platform (basis points)
-platform_fee: public(uint256)
+platform_fee: public(reentrant(uint256))
 # Fee paid to harvest callers (basis points)
-caller_fee: public(uint256)
+caller_fee: public(reentrant(uint256))
 # Vault contract that owns the strategy
-vault: public(address)
+vault: public(reentrant(address))
 
 
 event HarvesterUpdated:
@@ -57,11 +59,14 @@ event VaultSet:
 
 @deploy
 def __init__(
-    _asset: address, _rewards_contract: address, _harvester: address, _booster_id: uint256
+    _asset: address,
+    _rewards_contract: address,
+    _harvester: address,
+    _booster_id: uint256,
 ):
     """
     @param _asset Address of the LP token this strategy will manage
-    @param _rewards_contract Address of the Convex staking contrVaultSetact for rewards
+    @param _rewards_contract Address of the Convex staking contract for rewards
     @param _harvester Address of the harvester contract for processing rewards
     @param _booster_id Convex pool ID for depositing into the booster
     @dev Sets initial platform fee to 20% and caller fee to 1%
@@ -267,3 +272,17 @@ def harvest(
     )
     if target_asset_balance > 0:
         self._deposit(target_asset_balance)
+
+
+@external
+def forward_tokens(
+    _tokens: DynArray[address, constants.MAX_REWARD_TOKENS + 2], _recipient: address
+):
+    """
+    @notice Forward tokens from current harvester to recipient for migration
+    @param _tokens Array of token addresses to forward
+    @param _recipient Address to receive tokens
+    @dev Only callable by vault for harvester migration
+    """
+    assert msg.sender == self.vault, "Vault only"
+    extcall IHarvester(self.harvester).forward_tokens(_tokens, _recipient)

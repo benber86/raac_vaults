@@ -3,7 +3,7 @@
 
 @external
 def add_liquidity(
-    _amounts: DynArray[uint256, 8],
+    _amounts: uint256[2],
     _min_mint_amount: uint256,
     _receiver: address,
 ) -> uint256:
@@ -12,17 +12,5 @@ def add_liquidity(
 
 @external
 @view
-def N_COINS() -> uint256:
-    ...
-
-
-@external
-@view
 def get_virtual_price() -> uint256:
-    ...
-
-
-@external
-@view
-def price_oracle(i: uint256) -> uint256:
     ...
