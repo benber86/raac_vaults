@@ -235,6 +235,15 @@ def _swap(
                 True,
             )
             self.token_orders[_tokens[i]] = True
+            # in case we want to process extra rewards with CoW rather than hook, we set approvals here
+            if _tokens[i] not in [constants.CVX_TOKEN, constants.CRV_TOKEN]:
+                assert extcall IERC20(_tokens[i]).approve(
+                    VAULT_RELAYER, 0, default_return_value=True
+                )
+                assert extcall IERC20(_tokens[i]).approve(
+                    VAULT_RELAYER, max_value(uint256), default_return_value=True
+                )
+
         # Check if order has expired
         # If no order exists and last_order_time is 0, this will also create an entry
         if self.token_order_info[_tokens[i]].last_order_time + self.delay <= block.timestamp:

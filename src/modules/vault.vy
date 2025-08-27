@@ -118,6 +118,14 @@ def update_harvester(
 
     factory: address = staticcall IHarvester(harvester).factory()
     extcall IStrategy(erc4626.strategy).update_harvester(_new_harvester)
+    # We roll over the previous harvester's hooks by default
+    target_hook: address = staticcall IHarvester(harvester).target_hook()
+    extra_reward_hook: address = staticcall IHarvester(harvester).extra_reward_hook()
+    if target_hook != empty(address):
+        extcall IStrategy(erc4626.strategy).set_target_hook(target_hook)
+    if extra_reward_hook != empty(address):
+        extcall IStrategy(erc4626.strategy).set_extra_reward_hook(extra_reward_hook)
+
     extcall IVaultFactory(factory).update_harvester(_new_harvester)
 
 

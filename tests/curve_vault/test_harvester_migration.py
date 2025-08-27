@@ -26,9 +26,29 @@ def test_curve_harvester_migration_empty_tokens(
 
     assert strategy_contract.harvester() == new_harvester_addr.address
 
+    # Verify hooks were transferred from old to new harvester
+    old_harvester_contract = curve_harvester.at(old_harvester_addr)
+
+    old_target_hook = old_harvester_contract.target_hook()
+    old_extra_reward_hook = old_harvester_contract.extra_reward_hook()
+    new_target_hook = new_harvester_addr.target_hook()
+    new_extra_reward_hook = new_harvester_addr.extra_reward_hook()
+
     print("Migration completed for pyusd pool with empty token array")
     print(f"Old harvester: {old_harvester_addr}")
     print(f"New harvester: {new_harvester_addr.address}")
+    print("Hook migration:")
+    print(f"  Old harvester target hook: {old_target_hook}")
+    print(f"  New harvester target hook: {new_target_hook}")
+    print(f"  Old harvester extra reward hook: {old_extra_reward_hook}")
+    print(f"  New harvester extra reward hook: {new_extra_reward_hook}")
+
+    assert (
+        new_target_hook == old_target_hook
+    ), "Target hook should be transferred to new harvester"
+    assert (
+        new_extra_reward_hook == old_extra_reward_hook
+    ), "Extra reward hook should be transferred to new harvester"
 
 
 def test_curve_harvester_migration_with_extra_rewards(
@@ -71,6 +91,27 @@ def test_curve_harvester_migration_with_extra_rewards(
         )
 
     assert strategy_contract.harvester() == new_harvester_addr.address
+
+    # Verify hooks were transferred from old to new harvester
+    old_harvester_contract = curve_harvester.at(old_harvester_addr)
+
+    old_target_hook = old_harvester_contract.target_hook()
+    old_extra_reward_hook = old_harvester_contract.extra_reward_hook()
+    new_target_hook = new_harvester_addr.target_hook()
+    new_extra_reward_hook = new_harvester_addr.extra_reward_hook()
+
+    print("Hook migration:")
+    print(f"  Old harvester target hook: {old_target_hook}")
+    print(f"  New harvester target hook: {new_target_hook}")
+    print(f"  Old harvester extra reward hook: {old_extra_reward_hook}")
+    print(f"  New harvester extra reward hook: {new_extra_reward_hook}")
+
+    assert (
+        new_target_hook == old_target_hook
+    ), "Target hook should be transferred to new harvester"
+    assert (
+        new_extra_reward_hook == old_extra_reward_hook
+    ), "Extra reward hook should be transferred to new harvester"
 
     final_old_rsup_balance = rsup_token.balanceOf(old_harvester_addr)
     final_old_cvx_balance = cvx_token.balanceOf(old_harvester_addr)

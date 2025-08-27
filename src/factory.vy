@@ -46,6 +46,11 @@ struct Harvester:
     implementation: address
 
 
+event HarvesterDeployed:
+    index: uint256
+    harvester: address
+
+
 event VaultDeployed:
     id: uint256
     vault: address
@@ -287,6 +292,18 @@ def deploy_new_vault(
         extcall IVault(deployed_vault).deposit(_seed, msg.sender)
 
     return deployed_vault, deployed_strategy, deployed_harvester
+
+
+@external
+def deploy_harvester_instance(_harvester_index: uint256, _strategy: address) -> address:
+    # Get harvester implementation by index
+    assert _harvester_index < len(self.harvesters), "Invalid harvester index"
+    harvester_impl: address = self.harvesters[_harvester_index].implementation
+    deployed_harvester: address = create_from_blueprint(harvester_impl, self)
+    extcall IHarvester(deployed_harvester).set_approvals()
+    extcall IHarvester(deployed_harvester).set_strategy(_strategy)
+    log HarvesterDeployed(index=_harvester_index, harvester=deployed_harvester)
+    return deployed_harvester
 
 
 @external
