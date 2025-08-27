@@ -1,20 +1,52 @@
-# pragma version ^0.4.1
-# @license MIT
+# pragma version 0.4.3
+"""
+@title RAAC CoW Harvester
+@custom:contract-name raac_cow_harvester
+@notice Harvester contract to compound RAAC vault rewards with CoW Swap
+@license MIT
+@author RAAC
+"""
 
-from ..modules import cow_swapper
-from ..modules import constants
+from src.modules.swappers import cow_swapper
+from src.modules import constants
 
 initializes: cow_swapper
 
-exports: cow_swapper.__interface__
+exports: (
+    cow_swapper.COMPOSABLE_COW,
+    cow_swapper.MAX_TOKENS,
+    cow_swapper.VAULT_RELAYER,
+    cow_swapper.cancel_order,
+    cow_swapper.delay,
+    cow_swapper.extra_reward_hook,
+    cow_swapper.factory,
+    cow_swapper.forward_tokens,
+    cow_swapper.getTradeableOrder,
+    cow_swapper.get_order_info,
+    cow_swapper.isValidSignature,
+    cow_swapper.owner,
+    cow_swapper.set_approvals,
+    cow_swapper.set_delay,
+    cow_swapper.set_extra_reward_hook,
+    cow_swapper.set_strategy,
+    cow_swapper.set_target_hook,
+    cow_swapper.strategy,
+    cow_swapper.supportsInterface,
+    cow_swapper.target_hook,
+    cow_swapper.token_order_info,
+    cow_swapper.transfer_to_reward_hook,
+    cow_swapper.transfer_to_target_hook,
+    cow_swapper.treasury,
+    cow_swapper.verify,
+    cow_swapper.__default__,
+)
 
 
 @deploy
-def __init__(factory_: address):
-    cow_swapper.__init__(factory_)
+def __init__(_factory: address):
+    cow_swapper.__init__(_factory)
 
 
-@nonreentrant
 @external
 def harvest(
     _caller: address,
@@ -39,9 +71,8 @@ def harvest(
                                CVX
     @return target_asset_balance Amount of target asset received
     """
-    assert cow_swapper.swapper.fee_collector.strategy != empty(address)
-    assert msg.sender == cow_swapper.swapper.fee_collector.strategy, "Strategy only"
-    cow_swapper.swapper.fee_collector._collect()
+    assert cow_swapper.swapper.strategy != empty(address)
+    assert (msg.sender == cow_swapper.swapper.strategy), "Strategy only"
     tokens_to_swap: DynArray[address, cow_swapper.MAX_TOKENS] = [
         constants.CRV_TOKEN, constants.CVX_TOKEN
     ]

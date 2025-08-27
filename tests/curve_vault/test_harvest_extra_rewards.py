@@ -1,11 +1,12 @@
 import boa
+import pytest
 from boa.util.abi import abi_encode
 from eth_utils import function_signature_to_4byte_selector
 
 from src import raac_vault
-from tests.conftest import ZERO_ADDRESS
+from tests.conftest import PYUSD_POOL_NAME, USDC_POOL_NAME, ZERO_ADDRESS
 from tests.utils.constants import (
-    CRVUSD_INDEX_PYUSD_POOL,
+    CRVUSD_POOLS,
     CRVUSD_TOKEN,
     CURVE_TRICRV_POOL,
     RSUP_TOKEN,
@@ -14,32 +15,35 @@ from tests.utils.constants import (
 )
 
 
+@pytest.mark.parametrize("pool_name", [PYUSD_POOL_NAME, USDC_POOL_NAME])
 def test_vault_harvest_single_staker_with_extra_rewards(
-    test_extra_rewards_permissioned_vault,
+    extra_rewards_vault_list,
     crvusd_token,
     funded_accounts,
-    pyusd_crvusd_pool,
+    pool_list,
     get_base_reward_pool,
-    set_up_extra_rewards_for_pyusd_pool,
+    set_up_extra_rewards_for_pool,
     treasury,
     harvest_manager,
+    pool_name,
 ):
-    vault_addr, strategy_addr, harvester_addr = (
-        test_extra_rewards_permissioned_vault
-    )
+    crvusd_pool = pool_list[pool_name]
+    vault_addr, strategy_addr, harvester_addr = extra_rewards_vault_list[
+        pool_name
+    ]
     user = funded_accounts[0]
 
     vault_contract = raac_vault.at(vault_addr)
 
-    user_lp_balance = pyusd_crvusd_pool.balanceOf(user)
+    user_lp_balance = crvusd_pool.balanceOf(user)
     deposit_amount = user_lp_balance // 2
 
     with boa.env.prank(user):
-        pyusd_crvusd_pool.approve(vault_addr, deposit_amount)
+        crvusd_pool.approve(vault_addr, deposit_amount)
         vault_contract.deposit(deposit_amount, user)
 
     # Set up extra rewards
-    set_up_extra_rewards_for_pyusd_pool()
+    set_up_extra_rewards_for_pool()
 
     initial_total_assets = vault_contract.totalAssets()
 
@@ -53,9 +57,9 @@ def test_vault_harvest_single_staker_with_extra_rewards(
     target_encoded_args = abi_encode(
         "(address,address,uint256,uint256)",
         [
-            pyusd_crvusd_pool.address,
+            crvusd_pool.address,
             crvusd_token.address,
-            CRVUSD_INDEX_PYUSD_POOL,
+            CRVUSD_POOLS[pool_name]["crvusd_index"],
             0,
         ],
     )

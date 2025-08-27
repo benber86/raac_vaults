@@ -1,18 +1,26 @@
 import boa
+import pytest
 from boa.contracts.abi.abi_contract import ABIContractFactory
 from boa.util.abi import abi_encode
 from eth_utils import function_signature_to_4byte_selector
 
 from src import raac_vault, strategy
 from src.harvesters import cow_harvester
+from tests.conftest import PYUSD_POOL_NAME, USDC_POOL_NAME
 from tests.utils.abis import COMPOSABLE_COW_ABI
-from tests.utils.constants import CRVUSD_INDEX_PYUSD_POOL, CURVE_TRICRV_POOL
+from tests.utils.constants import CRVUSD_POOLS, CURVE_TRICRV_POOL
+from tests.utils.harvest_calculations import (
+    approx,
+    calc_expected_fees,
+    calc_expected_lp_tokens,
+)
 
 
+@pytest.mark.parametrize("pool_name", [PYUSD_POOL_NAME, USDC_POOL_NAME])
 def test_cow_harvester_workflow(
-    test_cow_vault,
+    cow_vault_list,
     funded_accounts,
-    pyusd_crvusd_pool,
+    pool_list,
     crvusd_token,
     crvusd_minter,
     crv_token,
@@ -20,30 +28,31 @@ def test_cow_harvester_workflow(
     treasury,
     add_liquidity_hook,
     harvest_manager,
+    pool_name,
 ):
-    vault_addr, strategy_addr, harvester_addr = test_cow_vault
+    crvusd_pool = pool_list[pool_name]
+    vault_addr, strategy_addr, harvester_addr = cow_vault_list[pool_name]
     user = funded_accounts[0]
 
     vault_contract = raac_vault.at(vault_addr)
     harvester_contract = cow_harvester.at(harvester_addr)
 
-    # 1. User deposits into vault
-    user_lp_balance = pyusd_crvusd_pool.balanceOf(user)
+    # User deposits into vault
+    user_lp_balance = crvusd_pool.balanceOf(user)
     deposit_amount = user_lp_balance // 2
 
     with boa.env.prank(user):
-        pyusd_crvusd_pool.approve(vault_addr, deposit_amount)
+        crvusd_pool.approve(vault_addr, deposit_amount)
         vault_contract.deposit(deposit_amount, user)
 
     initial_total_assets = vault_contract.totalAssets()
-    initial_treasury_crv = crv_token.balanceOf(treasury)
-    initial_treasury_cvx = cvx_token.balanceOf(treasury)
+    initial_treasury_crvusd = crvusd_token.balanceOf(treasury)
 
     boa.env.time_travel(seconds=86400 * 2)
 
-    # 1. First harvest - creates orders but no immediate rewards
+    # First harvest - creates orders but no immediate rewards
     target_hook_calldata = _prepare_target_hook_calldata(
-        pyusd_crvusd_pool.address, crvusd_token.address
+        crvusd_pool.address, crvusd_token.address, pool_name
     )
 
     buy_amounts = [int(1 * 1e18), int(5 * 1e18)]  # Minimum crvUSD expected
@@ -58,18 +67,13 @@ def test_cow_harvester_workflow(
             abi_encode("(uint256[])", [buy_amounts]),
         )
 
-    # 2. Check that treasury fees were paid in CRV/CVX
-    final_treasury_crv = crv_token.balanceOf(treasury)
-    final_treasury_cvx = cvx_token.balanceOf(treasury)
-
+    # Check that no treasury fees paid yet (no crvUSD available)
+    intermediate_treasury_crvusd = crvusd_token.balanceOf(treasury)
     assert (
-        final_treasury_crv > initial_treasury_crv
-    ), "Treasury should receive CRV fees"
-    assert (
-        final_treasury_cvx > initial_treasury_cvx
-    ), "Treasury should receive CVX fees"
+        intermediate_treasury_crvusd == initial_treasury_crvusd
+    ), "Treasury should not receive fees on first harvest (no crvUSD available)"
 
-    # 3. Check that orders were created
+    # Check that orders were created
     crv_order_exists, crv_order_info = harvester_contract.get_order_info(
         crv_token.address
     )
@@ -80,14 +84,13 @@ def test_cow_harvester_workflow(
     assert crv_order_exists, "CRV order should be created"
     assert cvx_order_exists, "CVX order should be created"
     assert crv_order_info.sell_amount > 0, "CRV order should have sell amount"
-    # we only test for CRV as CVX rewards will usually all have been paid out to treasury
-
-    # 4. Check that no caller fee paid yet (no crvUSD available)
+    assert cvx_order_info.sell_amount > 0, "CVX order should have sell amount"
+    # Check that no caller fee paid yet (no crvUSD available)
     assert (
         vault_contract.totalAssets() <= initial_total_assets
     ), "Assets should not increase on first harvest"
 
-    # 5. Simulate CoW searcher execution - remove CRV/CVX and add crvUSD
+    # Simulate CoW searcher execution - remove CRV/CVX and add crvUSD
     crv_balance = crv_token.balanceOf(harvester_addr)
     cvx_balance = cvx_token.balanceOf(harvester_addr)
 
@@ -100,11 +103,32 @@ def test_cow_harvester_workflow(
     with boa.env.prank(crvusd_minter):
         crvusd_token.mint(harvester_addr, expected_crvusd)
 
-    # 6. Wait for more rewards and do second harvest
+    # Wait for more rewards and do second harvest
     boa.env.time_travel(seconds=86400 * 7)
+
+    # Calculate expected fees based on available crvUSD
+    gross_harvest_crvusd = (
+        expected_crvusd  # We know exactly how much crvUSD is available
+    )
+    platform_fee_bps = strategy.at(strategy_addr).platform_fee()
+    caller_fee_bps = strategy.at(strategy_addr).caller_fee()
+
+    expected_platform_fees, expected_caller_fees, expected_net_harvest = (
+        calc_expected_fees(
+            gross_harvest_crvusd, platform_fee_bps, caller_fee_bps
+        )
+    )
 
     initial_user_crvusd = crvusd_token.balanceOf(user)
     initial_vault_assets = vault_contract.totalAssets()
+
+    print(f"Expected gross harvest: {gross_harvest_crvusd / 1e18:.6f} crvUSD")
+    print(
+        f"Expected platform fees: {expected_platform_fees / 1e18:.6f} crvUSD"
+    )
+    print(f"Expected caller fees: {expected_caller_fees / 1e18:.6f} crvUSD")
+    print(f"Expected net harvest: {expected_net_harvest / 1e18:.6f} crvUSD")
+    print(f"Initial total assets: {initial_vault_assets / 1e18:.6f} crvUSD")
 
     with boa.env.prank(harvest_manager):
         vault_contract.harvest(
@@ -116,21 +140,52 @@ def test_cow_harvester_workflow(
             abi_encode("(uint256[])", [buy_amounts]),  # harvester_calldata
         )
 
-    # 7. Check that second harvest results
+    # Check the second harvest results
     final_user_crvusd = crvusd_token.balanceOf(user)
     final_vault_assets = vault_contract.totalAssets()
+    final_treasury_crvusd = crvusd_token.balanceOf(treasury)
 
-    # Caller should receive fee in crvUSD
-    assert (
-        final_user_crvusd > initial_user_crvusd
-    ), "Caller should receive crvUSD fee"
+    # Calculate actual amounts received
+    actual_treasury_fees = final_treasury_crvusd - initial_treasury_crvusd
+    actual_caller_fees = final_user_crvusd - initial_user_crvusd
+    actual_vault_increase = final_vault_assets - initial_vault_assets
 
-    # Vault assets should increase (from autocompounding)
-    assert (
-        final_vault_assets > initial_vault_assets
-    ), "Vault assets should increase from compounding"
+    print(f"Final total assets: {final_vault_assets / 1e18:.6f} crvUSD")
+    print(f"Actual treasury fees: {actual_treasury_fees / 1e18:.6f} crvUSD")
+    print(f"Actual caller fees: {actual_caller_fees / 1e18:.6f} crvUSD")
+    print(
+        f"Actual vault increase: {actual_vault_increase / 1e18:.6f} LP tokens"
+    )
 
-    # 8. Check that new orders were created with updated amounts
+    # Calculate expected vault increase in LP token terms
+    expected_vault_increase_lp = calc_expected_lp_tokens(
+        crvusd_pool,
+        harvester_addr,
+        crvusd_token,
+        crvusd_minter,
+        expected_net_harvest,
+        pool_name,
+    )
+
+    print(
+        f"Expected vault increase: {expected_vault_increase_lp / 1e18:.6f} LP tokens"
+    )
+
+    # Verify precise fee distributions (using 0.1% tolerance)
+    assert approx(
+        actual_treasury_fees, expected_platform_fees, 1e-3
+    ), f"Treasury fees mismatch: got {actual_treasury_fees}, expected {expected_platform_fees}"
+
+    assert approx(
+        actual_caller_fees, expected_caller_fees, 1e-3
+    ), f"Caller fees mismatch: got {actual_caller_fees}, expected {expected_caller_fees}"
+
+    # The vault increase should match expected LP tokens from adding net harvest as liquidity
+    assert approx(
+        actual_vault_increase, expected_vault_increase_lp, 1e-3
+    ), f"Vault increase mismatch: got {actual_vault_increase}, expected {expected_vault_increase_lp}"
+
+    # Check that new orders were created with updated amounts
     new_crv_order_exists, new_crv_order_info = (
         harvester_contract.get_order_info(crv_token.address)
     )
@@ -146,14 +201,19 @@ def test_cow_harvester_workflow(
 
 
 def _prepare_target_hook_calldata(
-    pool_address: str, token_address: str
+    pool_address: str, token_address: str, pool_name: str
 ) -> bytes:
 
     target_sig = "add_liquidity(address,address,uint256,uint256)"
     target_selector = function_signature_to_4byte_selector(target_sig)
     target_encoded_args = abi_encode(
         "(address,address,uint256,uint256)",
-        [pool_address, token_address, CRVUSD_INDEX_PYUSD_POOL, 0],
+        [
+            pool_address,
+            token_address,
+            CRVUSD_POOLS[pool_name]["crvusd_index"],
+            0,
+        ],
     )
     return target_selector + target_encoded_args
 

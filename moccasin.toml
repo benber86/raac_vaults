@@ -7,7 +7,7 @@ version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12"
-dependencies = ["snekmate"]
+dependencies = ["snekmate==0.1.2"]
 default_network_name = "mainnet-fork"
 
 
@@ -22,11 +22,22 @@ fork = true
 
 [networks.mainnet]
 url = "${MAINNET_RPC_URL}"
-explorer_uri = "https://api.etherscan.com/api/"
+explorer_uri = "https://api.etherscan.io/v2/api"
 explorer_type = "etherscan"
 explorer_api_key="${ETHERSCAN_TOKEN}"
 chain_id = 1
 fork = false
+default_account_name="gramsci"
+
+
+[networks.sepolia]
+url = "https://sepolia.drpc.org"
+explorer_uri = "https://api.etherscan.io/v2/api"
+explorer_type = "etherscan"
+explorer_api_key="${ETHERSCAN_TOKEN}"
+chain_id = 11155111
+fork = false
+default_account_name="gramsci"
 
 [networks.mainnet-fork.contracts.convex_booster]
 address = "0xF403C135812408BFbE8713b5A23a04b3D48AAE31"
@@ -44,10 +55,6 @@ abi_from_explorer = true
 address = "0x4e3FBD56CD56c3e72c1403e103b45Db9da5B9D2B"
 abi_from_explorer = true
 
-[networks.mainnet-fork.contracts.pyusd_token]
-address = "0x6c3ea9036406852006290770BEdFcAbA0e23A0e8"
-abi_from_explorer = true
-
 [networks.mainnet-fork.contracts.cvx_eth_pool]
 address = "0xB576491F1E6e5E62f1d8F26062Ee822B40B0E0d4"
 abi_from_explorer = true
@@ -59,3 +66,10 @@ abi_from_explorer = true
 [networks.mainnet-fork.contracts.pyusd_crvusd_pool]
 address = "0x625E92624Bc2D88619ACCc1788365A69767f6200"
 abi_from_explorer = true
+
+[tool.isort]
+profile = "black"
+
+[tool.natrix]
+files = ["src/"]
+disabled_rules = ["NTX4", "NTX9", "NTX5"]

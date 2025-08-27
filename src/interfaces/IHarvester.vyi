@@ -1,4 +1,4 @@
-# pragma version ^0.4.1
+# pragma version 0.4.3
 # @license MIT
 
 
@@ -73,6 +73,11 @@ def harvest(
     _target_hook_calldata: Bytes[4096],
     _harvester_calldata: Bytes[4096],
 ) -> uint256:
+    ...
+
+
+@external
+def forward_tokens(_tokens: DynArray[address, 12], _recipient: address):
     ...
 
 

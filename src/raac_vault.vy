@@ -1,14 +1,75 @@
-# pragma version ^0.4.1
+# pragma version 0.4.3
+# pragma nonreentrancy on
 # @license MIT
 
+"""
+@title RAAC Vault
+@custom:contract-name raac_vault
+@author RAAC
+@notice ERC4626 compliant vault for autocompounding Convex Finance yield
+@dev This contract implements the ERC4626 standard for tokenized vaults and manages
+     user deposits/withdrawals while delegating strategy execution to a separate
+     strategy contract. It provides role-based access control for harvesting and
+     strategy management operations. The vault automatically compounds rewards from
+     the underlying Convex Finance positions through coordinated harvest operations.
+
+"""
+
 from ethereum.ercs import IERC20
-from modules import vault
-from modules import constants
-from interfaces import IStrategy
+from src.modules import vault
+from src.modules import constants
+from src.interfaces import IStrategy
 
 initializes: vault
 
-exports: vault.__interface__
+exports: (
+    vault.DEFAULT_ADMIN_ROLE,
+    vault.DOMAIN_SEPARATOR,
+    vault.HARVESTER_ROLE,
+    vault.STRATEGY_MANAGER_ROLE,
+    vault.allowance,
+    vault.approve,
+    vault.asset,
+    vault.balanceOf,
+    vault.convertToAssets,
+    vault.convertToShares,
+    vault.decimals,
+    vault.deposit,
+    vault.eip712Domain,
+    vault.getRoleAdmin,
+    vault.grantRole,
+    vault.hasRole,
+    vault.last_harvest,
+    vault.maxDeposit,
+    vault.maxMint,
+    vault.maxRedeem,
+    vault.maxWithdraw,
+    vault.mint,
+    vault.name,
+    vault.nonces,
+    vault.permit,
+    vault.previewDeposit,
+    vault.previewMint,
+    vault.previewRedeem,
+    vault.previewWithdraw,
+    vault.redeem,
+    vault.renounceRole,
+    vault.revokeRole,
+    vault.set_caller_fee,
+    vault.set_extra_reward_hook,
+    vault.set_platform_fee,
+    vault.set_role_admin,
+    vault.set_target_hook,
+    vault.strategy,
+    vault.supportsInterface,
+    vault.symbol,
+    vault.totalAssets,
+    vault.totalSupply,
+    vault.transfer,
+    vault.transferFrom,
+    vault.update_harvester,
+    vault.withdraw,
+)
 
 
 @deploy
@@ -22,7 +83,13 @@ def __init__(
     _strategy: address,
 ):
     vault.__init__(
-        _name, _symbol, _asset, _decimals_offset_, _name_eip712_, _version_eip712, _strategy
+        _name,
+        _symbol,
+        _asset,
+        _decimals_offset_,
+        _name_eip712_,
+        _version_eip712,
+        _strategy,
     )
 
 

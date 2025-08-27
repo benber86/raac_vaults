@@ -1,20 +1,39 @@
-# pragma version ^0.4.1
-# @license MIT
+# pragma version 0.4.3
+"""
+@title RAAC Curve Harvester
+@custom:contract-name raac_curve_harvester
+@notice Harvester contract to compound RAAC vault rewards with Curve pools
+@license MIT
+@author RAAC
+"""
 
-from ..modules import curve_swapper
-from ..modules import constants
+from src.modules.swappers import curve_swapper
+from src.modules import constants
 
 initializes: curve_swapper
 
-exports: curve_swapper.__interface__
+exports: (
+    curve_swapper.extra_reward_hook,
+    curve_swapper.factory,
+    curve_swapper.forward_tokens,
+    curve_swapper.set_approvals,
+    curve_swapper.set_extra_reward_hook,
+    curve_swapper.set_strategy,
+    curve_swapper.set_target_hook,
+    curve_swapper.strategy,
+    curve_swapper.target_hook,
+    curve_swapper.transfer_to_reward_hook,
+    curve_swapper.transfer_to_target_hook,
+    curve_swapper.treasury,
+    curve_swapper.__default__,
+)
 
 
 @deploy
-def __init__(factory_: address):
-    curve_swapper.__init__(factory_)
+def __init__(_factory: address):
+    curve_swapper.__init__(_factory)
 
 
-@nonreentrant
 @external
 def harvest(
     _caller: address,
@@ -37,9 +56,8 @@ def harvest(
     @param _harvester_calldata Not needed for the curve harvester
     @return target_asset_balance Amount of target asset received
     """
-    assert curve_swapper.swapper.fee_collector.strategy != empty(address)
-    assert msg.sender == curve_swapper.swapper.fee_collector.strategy, "Strategy only"
-    curve_swapper.swapper.fee_collector._collect()
+    assert curve_swapper.swapper.strategy != empty(address)
+    assert (msg.sender == curve_swapper.swapper.strategy), "Strategy only"
     return curve_swapper._swap(
         _caller, _min_amount_out, _reward_hook_calldata, _target_hook_calldata
     )
