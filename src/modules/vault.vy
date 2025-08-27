@@ -108,7 +108,10 @@ def update_harvester(
     _new_harvester: address,
     _migration_tokens: DynArray[address, constants.MAX_REWARD_TOKENS + 2] = [],
 ):
-    assert access_control.hasRole[STRATEGY_MANAGER_ROLE][msg.sender]
+    assert (
+        access_control.hasRole[STRATEGY_MANAGER_ROLE][msg.sender]
+        or access_control.hasRole[access_control.DEFAULT_ADMIN_ROLE][msg.sender]
+    )
     harvester: address = staticcall IStrategy(erc4626.strategy).harvester()
 
     # Forward any stranded tokens from old to new harvester

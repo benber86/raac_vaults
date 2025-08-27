@@ -9,6 +9,8 @@ from src import raac_vault, strategy
 from src.harvesters import curve_harvester
 from tests.utils.abis import ERC20_ABI
 from tests.utils.constants import (
+    CRV_TOKEN,
+    CVX_TOKEN,
     MAX_CALLER_FEE,
     MAX_PLATFORM_FEE,
     ZERO_ADDRESS,
@@ -340,6 +342,6 @@ class TestAccessControlFuzzing:
             self._setup_vault_components(pyusd_vault)
         )
         recipient = boa.env.generate_address()
-        tokens = [boa.env.generate_address(), boa.env.generate_address()]
+        tokens = [CRV_TOKEN, CVX_TOKEN]
         with boa.env.prank(vault.address):
             strategy_contract.forward_tokens(tokens, recipient)
