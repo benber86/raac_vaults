@@ -103,6 +103,45 @@ The protocol supports two harvester implementations, each optimized for differen
 - **Security**: MEV protection through CoW Swap's batch auction mechanism. Generally finds optimum prices as searchers don't typically collude. Although the CoW vaults are meant to be permissioned, they can potentially be made permissionless. For instance, Curve has been using CoW to handle the sales of its fees to crvUSD for several months in a permissionless manner and with no minimum amount specified for the trades. The lack of searcher collusion and the competitive nature of the price discovery process on CoWswap have (so far) offered superior prices.
 - **Use Case**: Balance between security and decentralization (Curve uses similar approach for fee burning)
 
+
+#### Infrastructure needed for the CoW Harvester
+
+Orders posted to the Composable CoW contract are not automatically picked up by searchers. To ensure that that order data makes it to the CoW orderbook, the harvest manager(s) should run a [watchtower](https://github.com/cowprotocol/watch-tower) instance.
+
+Watchtower can be run in a container and the configuration is simple. Create a `config.json` file:
+
+```
+{
+    "networks": [
+        {
+            "name": "mainnet",
+            "rpc": "https://eth.llamarpc.com",
+            "deploymentBlock": 23232835,
+            "watchdogTimeout": 120,
+            "pageSize": 1000,
+            "processEveryNumBlocks": 10,
+            "filterPolicy": {
+                "defaultAction": "DROP",
+                // All harvester contracts submitting orders need to be listed below
+                "owners": {
+                    "0xe6B762a35d3aD684BDFE84FaBC10E7CF10C3040c": "ACCEPT"
+                },
+                "handlers": {
+                    "0xe6B762a35d3aD684BDFE84FaBC10E7CF10C3040c": "ACCEPT"
+                }
+            }
+        }
+    ]
+}
+
+```
+
+Watchtower can then be run with docker using:
+
+```
+docker run --rm -it   -p 8080:8080   -v "$PWD/config.json:/config.json:ro"   ghcr.io/cowprotocol/watch-tower:latest   run --config-path /config.json
+```
+
 #### Migrating a harvester
 
 Sometimes a harvesting contract's logic may become deprecated (liquidity moved to another pool, swapping contracts were updated, etc.).
