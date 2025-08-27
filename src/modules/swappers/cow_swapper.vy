@@ -132,7 +132,8 @@ COMPOSABLE_COW: public(constant(address)) = 0xfdaFc9d1902f4e0b84f65F49f244b32b31
 VAULT_RELAYER: public(constant(address)) = 0xC92E8bdf79f0507f65a392b0ab4667716BFE0110
 ORDER_KIND_SELL: constant(bytes32) = keccak256("sell")
 BALANCE_ERC20: constant(bytes32) = keccak256("erc20")
-APP_DATA: constant(bytes32) = keccak256("RAAC")
+# https://explorer.cow.fi/appdata?tab=encode
+APP_DATA: constant(bytes32) = empty(bytes32)
 
 SUPPORTED_INTERFACES: constant(bytes4[3]) = [
     0x1626ba7e,  # isValidSignature(bytes32,bytes) / ERC1271_MAGIC_VALUE
@@ -142,7 +143,6 @@ SUPPORTED_INTERFACES: constant(bytes4[3]) = [
 SIGNATURE_VERIFIER_MUXER_INTERFACE: constant(bytes4) = 0x62af8dc2
 DAY: constant(uint256) = 60 * 60 * 24
 delay: public(uint256)
-owner: public(address)
 
 token_order_info: public(HashMap[address, TokenOrderInfo])
 token_orders: HashMap[address, bool]
