@@ -32,7 +32,7 @@ harvester: public(reentrant(address))
 # Convex pool ID for deposits
 booster_id: public(immutable(uint256))
 # Convex staking contract for this pool
-rewards_contract: public(immutable(address))
+rewards_contract: public(reentrant(immutable(address)))
 # Fee taken by the platform (basis points)
 platform_fee: public(reentrant(uint256))
 # Fee paid to harvest callers (basis points)
