@@ -3,6 +3,7 @@ import boa
 from src import strategy
 from src.harvesters import curve_harvester
 from tests.conftest import ZERO_ADDRESS
+from tests.utils.constants import CRV_TOKEN, CVX_TOKEN
 
 
 def test_strategy_set_extra_reward_hook(
@@ -223,7 +224,7 @@ def test_strategy_forward_tokens(test_permissioned_vault, accounts):
 
     strategy_contract = strategy.at(strategy_addr)
     recipient = accounts[5]
-    tokens_to_forward = [accounts[6], accounts[7]]
+    tokens_to_forward = [CRV_TOKEN, CVX_TOKEN]
 
     with boa.env.prank(vault_addr):
         strategy_contract.forward_tokens(tokens_to_forward, recipient)
