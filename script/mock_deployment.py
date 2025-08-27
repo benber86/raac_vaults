@@ -12,8 +12,11 @@ deployer = moccasin.config.get_active_network().get_default_account()
 
 
 def _verify(contract):
-    verifier = get_config().get_active_network().moccasin_verify(contract)
-    verifier.wait_for_verification()
+    try:
+        verifier = get_config().get_active_network().moccasin_verify(contract)
+        verifier.wait_for_verification()
+    except Exception as e:
+        print(f"Failed to verify {contract}: {e}")
 
 
 def deploy() -> VyperContract:
@@ -42,10 +45,6 @@ def deploy() -> VyperContract:
         add_liquidity_hook,
     ]
 
-    for contract in contracts:
-        print(f"Verifying: {contract} ({type(contract)})")
-        _verify(contract)
-
     factory_deployment.deploy_new_vault(
         CRVUSD_POOLS["usdt"]["booster_id"],
         1,  # cow harvester index
@@ -54,6 +53,10 @@ def deploy() -> VyperContract:
         ZERO_ADDRESS,
         add_liquidity_hook.address,
     )
+
+    for contract in contracts:
+        print(f"Verifying: {contract} ({type(contract)})")
+        _verify(contract)
 
 
 def moccasin_main() -> VyperContract:
