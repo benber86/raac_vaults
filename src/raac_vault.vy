@@ -36,10 +36,13 @@ exports: (
     vault.decimals,
     vault.deposit,
     vault.eip712Domain,
+    vault.full_profit_unlock_date,
     vault.getRoleAdmin,
     vault.grantRole,
+    vault.harvest,
     vault.hasRole,
     vault.last_harvest,
+    vault.locked_shares,
     vault.maxDeposit,
     vault.maxMint,
     vault.maxRedeem,
@@ -52,12 +55,15 @@ exports: (
     vault.previewMint,
     vault.previewRedeem,
     vault.previewWithdraw,
+    vault.profit_max_unlock_time,
+    vault.profit_unlocking_rate,
     vault.redeem,
     vault.renounceRole,
     vault.revokeRole,
     vault.set_caller_fee,
     vault.set_extra_reward_hook,
     vault.set_platform_fee,
+    vault.set_profit_max_unlock_time,
     vault.set_role_admin,
     vault.set_target_hook,
     vault.strategy,
@@ -67,6 +73,7 @@ exports: (
     vault.totalSupply,
     vault.transfer,
     vault.transferFrom,
+    vault.unlocked_shares,
     vault.update_harvester,
     vault.withdraw,
 )
@@ -81,6 +88,7 @@ def __init__(
     _name_eip712_: String[50],
     _version_eip712: String[20],
     _strategy: address,
+    _profit_max_unlock_time: uint256,
 ):
     vault.__init__(
         _name,
@@ -90,24 +98,5 @@ def __init__(
         _name_eip712_,
         _version_eip712,
         _strategy,
-    )
-
-
-@external
-def harvest(
-    _caller_fee_receiver: address,
-    _min_amount_out: uint256,
-    _extra_rewards: DynArray[address, constants.MAX_REWARD_TOKENS],
-    _reward_hook_calldata: Bytes[4096],
-    _target_hook_calldata: Bytes[4096],
-    _harvester_calldata: Bytes[4096],
-):
-    assert vault.access_control.hasRole[vault.HARVESTER_ROLE][msg.sender]
-    extcall IStrategy(vault.erc4626.strategy).harvest(
-        _caller_fee_receiver,
-        _min_amount_out,
-        _extra_rewards,
-        _reward_hook_calldata,
-        _target_hook_calldata,
-        _harvester_calldata,
+        _profit_max_unlock_time,
     )

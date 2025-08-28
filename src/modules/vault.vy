@@ -23,6 +23,8 @@ exports: (
     erc4626.decimals,
     erc4626.deposit,
     erc4626.eip712Domain,
+    erc4626.full_profit_unlock_date,
+    erc4626.locked_shares,
     erc4626.maxDeposit,
     erc4626.maxMint,
     erc4626.maxRedeem,
@@ -35,6 +37,8 @@ exports: (
     erc4626.previewMint,
     erc4626.previewRedeem,
     erc4626.previewWithdraw,
+    erc4626.profit_max_unlock_time,
+    erc4626.profit_unlocking_rate,
     erc4626.redeem,
     erc4626.strategy,
     erc4626.symbol,
@@ -57,6 +61,8 @@ exports: (
 )
 
 last_harvest: public(uint256)
+# Track assets before harvest for profit calculation
+pre_harvest_assets: uint256
 
 # Access control roles
 STRATEGY_MANAGER_ROLE: public(constant(bytes32)) = keccak256("STRATEGY_MANAGER_ROLE")
@@ -74,6 +80,7 @@ def __init__(
     _name_eip712: String[50],
     _version_eip712: String[20],
     _strategy: address,
+    _profit_max_unlock_time: uint256,
 ):
     """
     @dev Contract deployer will have the DEFAULT_ADMIN_ROLE on the vault
@@ -88,6 +95,7 @@ def __init__(
         _name_eip712,
         _version_eip712,
         _strategy,
+        _profit_max_unlock_time,
     )
 
 
@@ -148,3 +156,85 @@ def set_target_hook(_new_hook: address):
         or access_control.hasRole[access_control.DEFAULT_ADMIN_ROLE][msg.sender]
     )
     extcall IStrategy(erc4626.strategy).set_target_hook(_new_hook)
+
+
+@external
+def harvest(
+    _caller_fee_receiver: address,
+    _min_amount_out: uint256,
+    _extra_rewards: DynArray[address, constants.MAX_REWARD_TOKENS],
+    _reward_hook_calldata: Bytes[4096],
+    _target_hook_calldata: Bytes[4096],
+    _harvester_calldata: Bytes[4096],
+):
+    """
+    @notice Execute harvest with automatic profit streaming
+    @param _caller_fee_receiver Address to receive caller fee
+    @param _min_amount_out Minimum amount expected from final swap to target asset
+    @param _extra_rewards Array of additional reward token addresses to swap
+    @param _reward_hook_calldata Calldata to pass to extra reward hook contract
+    @param _target_hook_calldata Calldata to pass to target hook contract
+    @param _harvester_calldata Calldata to pass to harvester
+    @dev Only callable by addresses with HARVESTER_ROLE. Profit streaming is automatic
+         but can be disabled by setting profit_max_unlock_time to 0.
+    """
+    assert access_control.hasRole[HARVESTER_ROLE][msg.sender]
+
+    # Capture assets before harvest for profit calculation
+    self.pre_harvest_assets = staticcall IStrategy(erc4626.strategy).total_assets()
+
+    # Execute harvest
+    extcall IStrategy(erc4626.strategy).harvest(
+        _caller_fee_receiver,
+        _min_amount_out,
+        _extra_rewards,
+        _reward_hook_calldata,
+        _target_hook_calldata,
+        _harvester_calldata,
+    )
+
+    # Calculate profit and process streaming (if enabled)
+    post_harvest_assets: uint256 = staticcall IStrategy(erc4626.strategy).total_assets()
+    if post_harvest_assets > self.pre_harvest_assets:
+        profit: uint256 = post_harvest_assets - self.pre_harvest_assets
+        erc4626._process_profit_streaming(profit)
+
+    self.last_harvest = block.timestamp
+
+
+@external
+def set_profit_max_unlock_time(_new_profit_max_unlock_time: uint256):
+    """
+    @notice Set the new profit max unlock time
+    @param _new_profit_max_unlock_time The new profit max unlock time in seconds
+    @dev Must be less than one year for security, only callable by strategy manager
+    """
+    assert (
+        access_control.hasRole[STRATEGY_MANAGER_ROLE][msg.sender]
+        or access_control.hasRole[access_control.DEFAULT_ADMIN_ROLE][msg.sender]
+    )
+    # unlock time < 1 year
+    assert _new_profit_max_unlock_time <= 31_556_952, "profit unlock time too long"
+
+    # If setting to 0, unlock all profits immediately
+    if _new_profit_max_unlock_time == 0:
+        locked_shares: uint256 = erc4626.locked_shares
+        if locked_shares > 0:
+            # burn locked shares to unlock profits immediately
+            erc4626.erc20._burn(self, locked_shares)
+
+        erc4626.locked_shares = 0
+        erc4626.profit_unlocking_rate = 0
+        erc4626.full_profit_unlock_date = 0
+
+    erc4626.profit_max_unlock_time = _new_profit_max_unlock_time
+
+
+@external
+@view
+def unlocked_shares() -> uint256:
+    """
+    @notice Get the amount of shares that have been unlocked from profit streaming
+    @return The amount of shares unlocked since last update
+    """
+    return erc4626._unlocked_shares()

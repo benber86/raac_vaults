@@ -165,6 +165,7 @@ def deploy_new_vault(
     _harvester_reward_hook: address,
     _harvester_target_hook: address,
     _seed: uint256 = 0,
+    _profit_max_unlock_time: uint256 = 604800,  # 1 week
 ) -> (address, address, address):
     """
     @notice Deploys a new permissioned vault and its associated strategy and harvester contracts
@@ -182,6 +183,8 @@ def deploy_new_vault(
     @param _harvester_target_hook Address of target hook for harvester (optional).
     @param _seed Initial deposit amount to prevent inflation attacks through donation (optional).
                If > 0, transfers asset from msg.sender and deposits into vault.
+    @param _profit_max_unlock_time The amount of time profits will be locked for streaming
+               (default: 7 days)
     @return vault The deployed vault contract address.
     @return strategy The deployed strategy contract address.
     @return harvester The deployed harvester contract address.
@@ -197,9 +200,8 @@ def deploy_new_vault(
     harvester_impl: address = self.harvesters[_harvester_index].implementation
 
     deployed_harvester: address = create_from_blueprint(harvester_impl, self)
+
     # transaction will revert if id booster is incorrect
-
-
     pool_info: (address, address, address, address, address, bool) = staticcall IBooster(
         constants.CONVEX_BOOSTER
     ).poolInfo(_booster_id)
@@ -240,6 +242,7 @@ def deploy_new_vault(
         vault_token_name,
         vault_symbol,
         deployed_strategy,
+        _profit_max_unlock_time,
     )
 
 
