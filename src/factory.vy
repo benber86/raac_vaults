@@ -123,40 +123,6 @@ def __init__(
 
 
 @external
-def set_treasury(_new_treasury: address):
-    """
-    @notice Set a new treasury address, i.e. address that will receive the platform fees
-    @param _new_treasury Treasury address
-    """
-    ownable._check_owner()
-    self.treasury = _new_treasury
-    log TreasuryUpdated(treasury=_new_treasury)
-
-
-@internal
-def _add_harvester(_protocol: String[32], _implementation: address):
-    """
-    @notice Internal function to add a new harvester implementation
-    @param _protocol Protocol name for the harvester (e.g., "curve", "cow")
-    @param _implementation Address of the harvester implementation contract
-    """
-    assert _implementation != empty(address), "Implementation cannot be empty"
-    self.harvesters.append(Harvester(protocol=_protocol, implementation=_implementation))
-    log HarvesterAdded(protocol=_protocol, implementation=_implementation)
-
-
-@external
-def add_harvester(_protocol: String[32], _implementation: address):
-    """
-    @notice Add a new harvester implementation (owner only)
-    @param _protocol Protocol name for the harvester (e.g., "curve", "cow", "balancer")
-    @param _implementation Address of the harvester implementation contract
-    """
-    ownable._check_owner()
-    self._add_harvester(_protocol, _implementation)
-
-
-@external
 def deploy_new_vault(
     _booster_id: uint256,
     _harvester_index: uint256,
@@ -298,7 +264,49 @@ def deploy_new_vault(
 
 
 @external
+def set_treasury(_new_treasury: address):
+    """
+    @notice Set a new treasury address, i.e. address that will receive the platform fees
+    @param _new_treasury Treasury address
+    """
+    ownable._check_owner()
+    self.treasury = _new_treasury
+    log TreasuryUpdated(treasury=_new_treasury)
+
+
+@internal
+def _add_harvester(_protocol: String[32], _implementation: address) -> uint256:
+    assert _implementation != empty(address), "Implementation cannot be empty"
+    self.harvesters.append(Harvester(protocol=_protocol, implementation=_implementation))
+    log HarvesterAdded(protocol=_protocol, implementation=_implementation)
+    return len(self.harvesters) - 1
+
+
+@external
+def add_harvester(_protocol: String[32], _implementation: address) -> uint256:
+    """
+    @notice Add a new harvester implementation (owner only)
+    @param _protocol Protocol name for the harvester (e.g., "curve", "cow", "balancer")
+    @param _implementation Address of the harvester implementation contract
+    @return the index of the added harvester in the harvesters array
+    """
+    ownable._check_owner()
+    return self._add_harvester(_protocol, _implementation)
+
+
+@external
 def deploy_harvester_instance(_harvester_index: uint256, _strategy: address) -> address:
+    """
+    @notice Deploy a standalone harvester instance tied to an existing strategy
+    @dev This function allows deploying additional harvester instances independently
+         of vault deployment, useful for replacing or upgrading harvesters for existing
+         strategies. The new harvester is deployed with necessary approvals.
+    @param _harvester_index Index of the harvester implementation in the harvesters array
+    @param _strategy Address of the strategy contract that this harvester will serve
+    @return The address of the newly deployed harvester instance
+    @custom:reverts
+        - If the harvester index is invalid (>= harvesters array length)
+    """
     # Get harvester implementation by index
     assert _harvester_index < len(self.harvesters), "Invalid harvester index"
     harvester_impl: address = self.harvesters[_harvester_index].implementation
@@ -311,6 +319,16 @@ def deploy_harvester_instance(_harvester_index: uint256, _strategy: address) -> 
 
 @external
 def update_harvester(_new_harvester: address):
+    """
+    @notice Update the harvester address in the factory's vault registry
+    @dev This function is called by vault contracts through their update_harvester
+         function to maintain registry consistency when harvesters are replaced.
+    @param _new_harvester Address of the new harvester contract
+    @custom:access Only callable by registered vault contracts
+    @custom:reverts
+        - If the new harvester address is empty (zero address)
+        - If the caller is not a registered vault contract
+    """
     assert _new_harvester != empty(address), "Invalid harvester"
     vault_id: uint256 = self.vault_to_id[msg.sender]
     assert self.vault_registry[vault_id].vault == msg.sender, "Vault only"
