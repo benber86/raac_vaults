@@ -42,7 +42,6 @@ exports: (
     vault.harvest,
     vault.hasRole,
     vault.last_harvest,
-    vault.locked_shares,
     vault.maxDeposit,
     vault.maxMint,
     vault.maxRedeem,
