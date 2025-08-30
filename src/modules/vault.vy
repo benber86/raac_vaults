@@ -24,7 +24,6 @@ exports: (
     erc4626.deposit,
     erc4626.eip712Domain,
     erc4626.full_profit_unlock_date,
-    erc4626.locked_shares,
     erc4626.maxDeposit,
     erc4626.maxMint,
     erc4626.maxRedeem,
@@ -60,9 +59,12 @@ exports: (
     access_control.supportsInterface,
 )
 
+
+event UpdateProfitMaxUnlockTime:
+    profit_max_unlock_time: uint256
+
+
 last_harvest: public(uint256)
-# Track assets before harvest for profit calculation
-pre_harvest_assets: uint256
 
 # Access control roles
 STRATEGY_MANAGER_ROLE: public(constant(bytes32)) = keccak256("STRATEGY_MANAGER_ROLE")
@@ -181,7 +183,7 @@ def harvest(
     assert access_control.hasRole[HARVESTER_ROLE][msg.sender]
 
     # Capture assets before harvest for profit calculation
-    self.pre_harvest_assets = staticcall IStrategy(erc4626.strategy).total_assets()
+    pre_harvest_assets: uint256 = staticcall IStrategy(erc4626.strategy).total_assets()
 
     # Execute harvest
     extcall IStrategy(erc4626.strategy).harvest(
@@ -195,9 +197,9 @@ def harvest(
 
     # Calculate profit and process streaming (if enabled)
     post_harvest_assets: uint256 = staticcall IStrategy(erc4626.strategy).total_assets()
-    if post_harvest_assets > self.pre_harvest_assets:
-        profit: uint256 = post_harvest_assets - self.pre_harvest_assets
-        erc4626._process_profit_streaming(profit)
+    if post_harvest_assets > pre_harvest_assets:
+        profit: uint256 = post_harvest_assets - pre_harvest_assets
+        erc4626._process_profit_streaming(profit, pre_harvest_assets)
 
     self.last_harvest = block.timestamp
 
@@ -218,16 +220,16 @@ def set_profit_max_unlock_time(_new_profit_max_unlock_time: uint256):
 
     # If setting to 0, unlock all profits immediately
     if _new_profit_max_unlock_time == 0:
-        locked_shares: uint256 = erc4626.locked_shares
+        locked_shares: uint256 = erc4626.erc20.balanceOf[self]
         if locked_shares > 0:
             # burn locked shares to unlock profits immediately
             erc4626.erc20._burn(self, locked_shares)
 
-        erc4626.locked_shares = 0
         erc4626.profit_unlocking_rate = 0
         erc4626.full_profit_unlock_date = 0
 
     erc4626.profit_max_unlock_time = _new_profit_max_unlock_time
+    log UpdateProfitMaxUnlockTime(profit_max_unlock_time=_new_profit_max_unlock_time)
 
 
 @external

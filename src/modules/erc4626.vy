@@ -197,8 +197,6 @@ full_profit_unlock_date: public(uint256)
 profit_unlocking_rate: public(uint256)
 # @dev Last timestamp of profit streaming update.
 last_profit_update: public(uint256)
-# @dev Total shares held by vault for profit streaming.
-locked_shares: public(uint256)
 
 
 @deploy
@@ -279,10 +277,20 @@ def balanceOf(addr: address) -> uint256:
     @return uint256 The balance of the user.
     """
     if addr == self:
-        # If the address is the vault, return locked shares minus unlocked shares
-        return self.locked_shares - self._unlocked_shares()
+        # If the address is the vault, account for locked shares
+        return erc20.balanceOf[self] - self._unlocked_shares()
 
     return erc20.balanceOf[addr]
+
+
+@internal
+@view
+def _total_supply() -> uint256:
+    """
+    @dev Internal function to get streaming-adjusted total supply.
+    @return uint256 The total supply excluding unlocked shares.
+    """
+    return erc20.totalSupply - self._unlocked_shares()
 
 
 @external
@@ -295,7 +303,7 @@ def totalSupply() -> uint256:
             https://eips.ethereum.org/EIPS/eip-20#totalSupply.
     @return uint256 The 32-byte total supply excluding locked shares.
     """
-    return erc20.totalSupply - self._unlocked_shares()
+    return self._total_supply()
 
 
 @external
@@ -575,9 +583,11 @@ def _try_get_underlying_decimals(underlying: IERC20) -> (bool, uint8):
 @view
 def _unlocked_shares() -> uint256:
     """
-    @dev Returns the amount of shares that have been unlocked from profit streaming.
-         To avoid sudden share price spikes, profits are processed through an
-         unlocking period. Shares that have been locked are gradually unlocked over time.
+    @dev Returns the amount of shares that have been unlocked.
+         To avoid sudden price_per_share spikes, profits can be processed
+         through an unlocking period. The mechanism involves shares to be
+         minted to the vault which are unlocked gradually over time. Shares
+         that have been locked are gradually unlocked over profit_max_unlock_time.
     @return uint256 The amount of shares that have unlocked since last update.
     """
     _full_profit_unlock_date: uint256 = self.full_profit_unlock_date
@@ -591,7 +601,7 @@ def _unlocked_shares() -> uint256:
         )
     elif _full_profit_unlock_date != 0:
         # All shares have been unlocked
-        unlocked_shares = self.locked_shares
+        unlocked_shares = erc20.balanceOf[self]
 
     return unlocked_shares
 
@@ -621,7 +631,7 @@ def _convert_to_shares(assets: uint256, roundup: bool) -> uint256:
     @return uint256 The converted 32-byte shares amount.
     """
     # Use streaming-adjusted total supply for conversion
-    total_supply_adjusted: uint256 = erc20.totalSupply - self._unlocked_shares()
+    total_supply_adjusted: uint256 = self._total_supply()
     return math._mul_div(
         assets,
         total_supply_adjusted + 10**convert(_DECIMALS_OFFSET, uint256),
@@ -642,7 +652,7 @@ def _convert_to_assets(shares: uint256, roundup: bool) -> uint256:
     @return uint256 The converted 32-byte assets amount.
     """
     # Use streaming-adjusted total supply for conversion
-    total_supply_adjusted: uint256 = erc20.totalSupply - self._unlocked_shares()
+    total_supply_adjusted: uint256 = self._total_supply()
     return math._mul_div(
         shares,
         self._total_assets() + 1,
@@ -815,7 +825,7 @@ def _deposit(sender: address, receiver: address, assets: uint256, shares: uint25
 
 
 @internal
-def _process_profit_streaming(profit_assets: uint256):
+def _process_profit_streaming(profit_assets: uint256, pre_harvest_assets: uint256):
     """
     @dev Process profit through streaming mechanism by minting locked shares.
     @param profit_assets The amount of profit assets to stream.
@@ -823,57 +833,67 @@ def _process_profit_streaming(profit_assets: uint256):
     if profit_assets == 0 or self.profit_max_unlock_time == 0:
         return
 
-    shares_to_lock: uint256 = self._convert_to_shares(profit_assets, False)
+    ts: uint256 = self._total_supply()
+    shares_to_lock: uint256 = math._mul_div(
+        profit_assets,
+        ts + 10**convert(_DECIMALS_OFFSET, uint256),
+        pre_harvest_assets + 1,
+        False,
+    )
 
     if shares_to_lock == 0:
         return
 
     total_supply: uint256 = erc20.totalSupply
-    # The total shares the vault currently owns (locked)
-    total_locked_shares: uint256 = self.locked_shares
+    # The total shares the vault currently owns. Both locked and unlocked.
+    total_locked_shares: uint256 = erc20.balanceOf[self]
 
     # Get the desired end amount of shares after streaming accounting
     ending_supply: uint256 = total_supply + shares_to_lock - self._unlocked_shares()
 
-    # Issue new shares to vault if needed
+    # If we will end with more shares than we have now.
     if ending_supply > total_supply:
         # Mint the difference to the vault (this contract)
         shares_to_mint: uint256 = ending_supply - total_supply
         erc20._mint(self, shares_to_mint)
-    # Burn excess shares if needed
+    # Else we need to burn shares.
     elif total_supply > ending_supply:
         # Can't burn more than the vault owns
         to_burn: uint256 = min(total_supply - ending_supply, total_locked_shares)
         erc20._burn(self, to_burn)
 
-    if shares_to_lock > 0:
+    total_locked_shares = erc20.balanceOf[self]
+    if total_locked_shares > 0:
         previously_locked_time: uint256 = 0
         _full_profit_unlock_date: uint256 = self.full_profit_unlock_date
 
         # Check if we need to account for shares still unlocking
         if _full_profit_unlock_date > block.timestamp:
-            # Calculate remaining time for previously locked shares
-            remaining_locked_shares: uint256 = self.locked_shares - shares_to_lock
-            if remaining_locked_shares > 0:
-                previously_locked_time = remaining_locked_shares * (
-                    _full_profit_unlock_date - block.timestamp
-                )
+            # There will only be previously locked shares if time remains.
+            # We calculate this here since it will not occur every time we lock shares.
+            remaining_locked_shares: uint256 = total_locked_shares - shares_to_lock
+            previously_locked_time = remaining_locked_shares * (
+                _full_profit_unlock_date - block.timestamp
+            )
 
-        # Calculate new total locked shares
-        total_locked_shares_new: uint256 = total_locked_shares + shares_to_lock
-
-        # New streaming period is weighted average
         new_profit_locking_period: uint256 = (
-            previously_locked_time + shares_to_lock * self.profit_max_unlock_time
-        ) // total_locked_shares_new
-
-        # Update streaming parameters
-        self.locked_shares = total_locked_shares_new
-        self.profit_unlocking_rate = (
-            total_locked_shares_new * MAX_BPS_EXTENDED // new_profit_locking_period
+            (
+                previously_locked_time + shares_to_lock * self.profit_max_unlock_time
+            ) // total_locked_shares
         )
+
+        # Calculate how many shares unlock per second.
+        self.profit_unlocking_rate = (
+            total_locked_shares * MAX_BPS_EXTENDED // new_profit_locking_period
+        )
+        # Calculate how long until the full amount of shares is unlocked.
         self.full_profit_unlock_date = block.timestamp + new_profit_locking_period
+        # Update the last profitable report timestamp.
         self.last_profit_update = block.timestamp
+    else:
+        # NOTE: only setting this to the 0 will turn in the desired effect,
+        # no need to update profit_unlocking_rate
+        self.full_profit_unlock_date = 0
 
 
 @internal
