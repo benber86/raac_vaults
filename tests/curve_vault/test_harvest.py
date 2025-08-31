@@ -497,3 +497,23 @@ def test_vault_streaming_withdrawals_different_times(
     assert user2_max_withdraw_end == pytest.approx(expected_end, rel=1e-6)
     assert user1_withdrawn == pytest.approx(user1_max_withdraw_1day, rel=1e-6)
     assert user2_withdrawn == pytest.approx(user2_max_withdraw_end, rel=1e-6)
+
+
+@pytest.mark.parametrize(
+    "pool_name", [PYUSD_POOL_NAME, USDC_POOL_NAME, USDT_POOL_NAME]
+)
+def test_harvest_zero_supply_reverts(
+    vault_list,
+    harvest_manager,
+    pool_name,
+):
+    vault_addr, strategy_addr, harvester_addr = vault_list[pool_name]
+    vault_contract = raac_vault.at(vault_addr)
+
+    # Vault should have zero supply initially
+    assert vault_contract.totalSupply() == 0
+
+    # Attempt to harvest with zero supply should revert
+    with boa.reverts("No supply"):
+        with boa.env.prank(harvest_manager):
+            vault_contract.harvest(harvest_manager, 0, [], b"", b"", b"")

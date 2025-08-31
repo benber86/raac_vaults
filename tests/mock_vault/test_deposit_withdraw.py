@@ -7,9 +7,9 @@ def test_deposit_withdraw_three_users(
     vault = mock_vault
     users = funded_mock_vault_users[:3]
     deposit_amounts = [
-        int(100_000 * 1e18),
-        int(200_000 * 1e18),
-        int(150_000 * 1e18),
+        100_000 * 10**18,
+        200_000 * 10**18,
+        150_000 * 10**18,
     ]
 
     # All users deposit
