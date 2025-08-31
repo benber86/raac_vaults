@@ -24,6 +24,7 @@ exports: (
     erc4626.deposit,
     erc4626.eip712Domain,
     erc4626.full_profit_unlock_date,
+    erc4626.locked_shares,
     erc4626.maxDeposit,
     erc4626.maxMint,
     erc4626.maxRedeem,
@@ -38,6 +39,8 @@ exports: (
     erc4626.previewWithdraw,
     erc4626.profit_max_unlock_time,
     erc4626.profit_unlocking_rate,
+    erc4626.raw_total_supply,
+    erc4626.raw_vault_balance,
     erc4626.redeem,
     erc4626.strategy,
     erc4626.symbol,
@@ -45,6 +48,8 @@ exports: (
     erc4626.totalSupply,
     erc4626.transfer,
     erc4626.transferFrom,
+    erc4626.unlock_scale,
+    erc4626.unlocked_shares,
     erc4626.withdraw,
 )
 
@@ -182,6 +187,9 @@ def harvest(
     """
     assert access_control.hasRole[HARVESTER_ROLE][msg.sender]
 
+    # no harvest if no users / nothing was minted
+    assert erc4626.erc20.totalSupply > 0, "No supply"
+
     # Capture assets before harvest for profit calculation
     pre_harvest_assets: uint256 = staticcall IStrategy(erc4626.strategy).total_assets()
 
@@ -230,13 +238,3 @@ def set_profit_max_unlock_time(_new_profit_max_unlock_time: uint256):
 
     erc4626.profit_max_unlock_time = _new_profit_max_unlock_time
     log UpdateProfitMaxUnlockTime(profit_max_unlock_time=_new_profit_max_unlock_time)
-
-
-@external
-@view
-def unlocked_shares() -> uint256:
-    """
-    @notice Get the amount of shares that have been unlocked from profit streaming
-    @return The amount of shares unlocked since last update
-    """
-    return erc4626._unlocked_shares()

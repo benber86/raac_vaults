@@ -288,7 +288,7 @@ def balanceOf(addr: address) -> uint256:
 def _total_supply() -> uint256:
     """
     @dev Internal function to get streaming-adjusted total supply.
-    @return uint256 The total supply excluding unlocked shares.
+    @return uint256 The total supply accounting for locked shares.
     """
     return erc20.totalSupply - self._unlocked_shares()
 
@@ -297,11 +297,13 @@ def _total_supply() -> uint256:
 @view
 def totalSupply() -> uint256:
     """
-    @dev Returns the total amount of shares in existence, excluding locked shares.
-         This is required for ERC4626 compliance with profit streaming.
+    @dev Returns the total amount of shares in existence, excluding locked shares that have unlocked.
+         When profits are realized, the vault mints locked shares to itself which become
+         part of the total supply. Those locked shares should have no effect on the price
+         of the shares yet, but unlocked ones do.
     @notice For the to be fulfilled conditions, please refer to:
             https://eips.ethereum.org/EIPS/eip-20#totalSupply.
-    @return uint256 The 32-byte total supply excluding locked shares.
+    @return uint256 The 32-byte total supply.
     """
     return self._total_supply()
 
@@ -606,6 +608,61 @@ def _unlocked_shares() -> uint256:
     return unlocked_shares
 
 
+@external
+@view
+def raw_total_supply() -> uint256:
+    """
+    @notice ERC20 total supply before streaming adjustments.
+    @dev Equals erc20.totalSupply; differs from totalSupply() which excludes unlocked shares.
+    @return The raw ERC20 supply including vault-owned shares.
+    """
+    return erc20.totalSupply
+
+
+@external
+@view
+def raw_vault_balance() -> uint256:
+    """
+    @notice ERC20 balance of the vault itself before streaming adjustments.
+    @dev Equals erc20.balanceOf[self]; includes both locked and unlocked shares held by the vault.
+    @return The vault’s raw ERC20 self-balance.
+    """
+    return erc20.balanceOf[self]
+
+
+@external
+@view
+def unlocked_shares() -> uint256:
+    """
+    @notice Shares that have unlocked from profit streaming up to the current block.
+    @dev Derived from internal streaming state; increases monotonically until full unlock.
+    @return The number of unlocked shares.
+    """
+    return self._unlocked_shares()
+
+
+@external
+@view
+def locked_shares() -> uint256:
+    """
+    @notice Shares still locked under the profit streaming schedule.
+    @dev Computed as raw_vault_balance() - unlocked_shares().
+    @return The number of locked shares.
+    """
+    return erc20.balanceOf[self] - self._unlocked_shares()
+
+
+@external
+@view
+def unlock_scale() -> uint256:
+    """
+    @notice Scale used for profit_unlocking_rate computations.
+    @dev profit_unlocking_rate * dt / unlock_scale() = shares unlocked over dt seconds.
+    @return The streaming math scale constant.
+    """
+    return MAX_BPS_EXTENDED
+
+
 @internal
 @view
 def _total_assets() -> uint256:
@@ -829,6 +886,7 @@ def _process_profit_streaming(profit_assets: uint256, pre_harvest_assets: uint25
     """
     @dev Process profit through streaming mechanism by minting locked shares.
     @param profit_assets The amount of profit assets to stream.
+    @param pre_harvest_assets The strategy's total assets prior to the harvest
     """
     if profit_assets == 0 or self.profit_max_unlock_time == 0:
         return

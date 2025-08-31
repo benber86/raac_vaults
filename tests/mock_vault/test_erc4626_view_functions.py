@@ -51,7 +51,7 @@ def test_view_functions_after_single_deposit(
 ):
     vault = mock_vault
     user = funded_mock_vault_users[0]
-    deposit_amount = int(100_000 * 1e18)
+    deposit_amount = int(100_000 * 10**18)
 
     # User deposits
     with boa.env.prank(user):
@@ -81,7 +81,7 @@ def test_view_functions_after_single_deposit(
     assert vault.maxRedeem(other_user) == 0
 
     # previewDeposit/previewMint consistent
-    test_amount = int(50_000 * 1e18)
+    test_amount = int(50_000 * 10**18)
     assert vault.previewDeposit(test_amount) == test_amount
     assert vault.previewMint(test_amount) == test_amount
 
@@ -90,7 +90,9 @@ def test_view_functions_after_single_deposit(
     assert vault.previewRedeem(test_amount) == test_amount
 
 
-@pytest.mark.parametrize("donation_amount", [int(100 * 1e18), int(600 * 1e18)])
+@pytest.mark.parametrize(
+    "donation_amount", [int(100 * 10**18), int(600 * 10**18)]
+)
 def test_view_functions_after_donation(
     mock_vault,
     mock_strategy_contract,
@@ -100,7 +102,7 @@ def test_view_functions_after_donation(
 ):
 
     user = funded_mock_vault_users[0]
-    deposit_amount = int(1000 * 1e18)
+    deposit_amount = int(1000 * 10**18)
 
     # User deposits first
     with boa.env.prank(user):
@@ -130,10 +132,10 @@ def test_view_functions_after_donation(
     total_supply = mock_vault.totalSupply()
     user_shares = mock_vault.balanceOf(user)
 
-    print(f"\n=== Donation Test: {donation_amount / 1e18:.1f} ===")
-    print(f"Total Assets: {total_assets / 1e18:.1f}")
-    print(f"Total Supply: {total_supply / 1e18:.1f}")
-    print(f"User Shares:  {user_shares / 1e18:.1f}")
+    print(f"\n=== Donation Test: {donation_amount / 10**18:.1f} ===")
+    print(f"Total Assets: {total_assets / 10**18:.1f}")
+    print(f"Total Supply: {total_supply / 10**18:.1f}")
+    print(f"User Shares:  {user_shares / 10**18:.1f}")
     print(f"Assets * Total Supply: {total_assets * total_supply}")
 
     # Test conversion functions with table - use smaller values to show rounding
@@ -254,7 +256,7 @@ def test_view_functions_after_donation(
     # Basic assertions with detailed output
     expected_total = deposit_amount + donation_amount
     print("\nAssertion check:")
-    print(f"Total Assets: {total_assets / 1e18:.1f}")
-    print(f"Expected (Deposit + Donation): {expected_total / 1e18:.1f}")
+    print(f"Total Assets: {total_assets / 10**18:.1f}")
+    print(f"Expected (Deposit + Donation): {expected_total / 10**18:.1f}")
 
     assert total_assets == pytest.approx(expected_total, rel=1e-6)

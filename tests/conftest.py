@@ -459,7 +459,7 @@ def funded_mock_vault_users(mock_vault, crvusd_token, accounts):
 @pytest.fixture(scope="session")
 def harvest_caller(mock_strategy_contract, mock_vault, crvusd_token):
     caller = boa.env.generate_address()
-    boa.deal(crvusd_token, caller, int(100_000_000 * 1e18))
+    boa.deal(crvusd_token, caller, int(1_000_000_000 * 1e18))
     with boa.env.prank(caller):
         crvusd_token.approve(mock_strategy_contract.address, 2**256 - 1)
 
