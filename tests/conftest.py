@@ -11,6 +11,7 @@ from moccasin.moccasin_account import MoccasinAccount
 from src import factory, raac_vault, strategy
 from src.harvesters import cow_harvester, curve_harvester
 from src.hooks import add_liquidity, add_liquidity_ng, handle_extra_rewards
+from src.mocks import mock_strategy
 from tests.utils.abis import (
     BASE_REWARD_POOL_ABI,
     CONVEX_STASH_ABI,
@@ -421,3 +422,47 @@ def cow_vault_list(pyusd_cow_vault, usdc_cow_vault, usdt_cow_vault):
 @pytest.fixture(scope="module")
 def test_cow_vault(pyusd_cow_vault):
     return pyusd_cow_vault
+
+
+@pytest.fixture(scope="session")
+def mock_strategy_contract(crvusd_token):
+    return mock_strategy.deploy(crvusd_token.address)
+
+
+@pytest.fixture(scope="session")
+def mock_vault(crvusd_token, mock_strategy_contract):
+    vault_instance = raac_vault.deploy(
+        "RAAC Mock Vault",
+        "MOCK",
+        crvusd_token.address,
+        0,
+        "RAAC Mock Vault",
+        "1",
+        mock_strategy_contract.address,
+        604800,
+    )
+
+    mock_strategy_contract.set_vault(vault_instance.address)
+    return vault_instance
+
+
+@pytest.fixture(scope="function")
+def funded_mock_vault_users(mock_vault, crvusd_token, accounts):
+    for user in accounts:
+        boa.deal(crvusd_token, user, int(1_000_000 * 1e18))
+        with boa.env.prank(user):
+            crvusd_token.approve(mock_vault.address, int(1_000_000 * 1e18))
+
+    return accounts
+
+
+@pytest.fixture(scope="session")
+def harvest_caller(mock_strategy_contract, mock_vault, crvusd_token):
+    caller = boa.env.generate_address()
+    boa.deal(crvusd_token, caller, int(1_000_000_000 * 1e18))
+    with boa.env.prank(caller):
+        crvusd_token.approve(mock_strategy_contract.address, 2**256 - 1)
+
+    mock_vault.grantRole(mock_vault.HARVESTER_ROLE(), caller)
+    mock_vault.grantRole(mock_vault.STRATEGY_MANAGER_ROLE(), caller)
+    return caller

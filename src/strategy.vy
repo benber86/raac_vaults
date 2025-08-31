@@ -57,6 +57,11 @@ event VaultSet:
     vault: address
 
 
+event Harvest:
+    caller: address
+    amount: uint256
+
+
 @deploy
 def __init__(
     _asset: address,
@@ -272,6 +277,7 @@ def harvest(
     )
     if target_asset_balance > 0:
         self._deposit(target_asset_balance)
+        log Harvest(caller=_caller, amount=target_asset_balance)
 
 
 @external
