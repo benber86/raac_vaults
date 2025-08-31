@@ -24,7 +24,6 @@ exports: (
     cow_swapper.getTradeableOrder,
     cow_swapper.get_order_info,
     cow_swapper.isValidSignature,
-    cow_swapper.owner,
     cow_swapper.set_approvals,
     cow_swapper.set_delay,
     cow_swapper.set_extra_reward_hook,
