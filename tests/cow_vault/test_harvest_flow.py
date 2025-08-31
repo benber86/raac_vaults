@@ -218,13 +218,20 @@ def _prepare_target_hook_calldata(
     return target_selector + target_encoded_args
 
 
-def test_cow_order_cancellation(test_cow_vault, crv_token, harvest_manager):
+def test_cow_order_cancellation(
+    test_cow_vault, funded_accounts, crvusd_pool, crv_token, harvest_manager
+):
     vault_addr, strategy_addr, harvester_addr = test_cow_vault
 
-    vault_contract = strategy.at(vault_addr)
+    vault_contract = raac_vault.at(vault_addr)
     harvester_contract = cow_harvester.at(harvester_addr)
 
     buy_amounts = [int(100 * 1e18), int(50 * 1e18)]  # Non-zero amounts
+    # need a dpsoit for the harvest
+    user = funded_accounts[0]
+    with boa.env.prank(user):
+        crvusd_pool.approve(vault_addr, 10**18)
+        vault_contract.deposit(10**18, user)
 
     with boa.env.prank(harvest_manager):
         vault_contract.harvest(
@@ -277,7 +284,9 @@ def test_cow_order_cancellation(test_cow_vault, crv_token, harvest_manager):
     assert order_info_after.last_order_time == 0, "Order info should be reset"
 
 
-def test_cow_order_expiry(test_cow_vault, crv_token, harvest_manager):
+def test_cow_order_expiry(
+    test_cow_vault, funded_accounts, crvusd_pool, crv_token, harvest_manager
+):
     vault_addr, strategy_addr, harvester_addr = test_cow_vault
     harvester_contract = cow_harvester.at(harvester_addr)
 
@@ -287,8 +296,14 @@ def test_cow_order_expiry(test_cow_vault, crv_token, harvest_manager):
     with boa.env.prank(CURVE_TRICRV_POOL):
         crv_token.transfer(harvester_addr, int(1000 * 1e18))
 
+    vault_contract = raac_vault.at(vault_addr)
+    # need a dpsoit for the harvest
+    user = funded_accounts[0]
+    with boa.env.prank(user):
+        crvusd_pool.approve(vault_addr, 10**18)
+        vault_contract.deposit(10**18, user)
+
     with boa.env.prank(harvest_manager):
-        vault_contract = raac_vault.at(vault_addr)
         vault_contract.harvest(
             harvest_manager,
             0,  # min_amount_out

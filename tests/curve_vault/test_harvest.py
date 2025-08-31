@@ -286,6 +286,7 @@ def test_vault_withdraw_after_harvest_profit(
     with boa.env.prank(harvest_manager):
         vault_contract.harvest(user, 0, [], b"", target_hook_calldata, b"")
 
+    boa.env.time_travel(seconds=86400 * 7)
     final_treasury_crvusd = crvusd_token.balanceOf(treasury)
     assert (
         final_treasury_crvusd > initial_treasury_crvusd
