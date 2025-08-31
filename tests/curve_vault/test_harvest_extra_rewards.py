@@ -123,6 +123,8 @@ def test_vault_harvest_single_staker_with_extra_rewards(
 
     extra_rewards = [RSUP_TOKEN]
 
+    boa.env.time_travel(seconds=86400 * 7)
+
     with boa.env.prank(harvest_manager):
         vault_contract.harvest(
             user,
