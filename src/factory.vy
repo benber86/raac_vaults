@@ -270,6 +270,7 @@ def set_treasury(_new_treasury: address):
     @param _new_treasury Treasury address
     """
     ownable._check_owner()
+    assert _new_treasury != empty(address), "Treasury cannot be empty"
     self.treasury = _new_treasury
     log TreasuryUpdated(treasury=_new_treasury)
 
