@@ -161,11 +161,7 @@ def deploy_new_vault(
         - If seed > 0 and caller hasn't approved factory for asset transfer.
     """
 
-    # Get harvester implementation by index
-    assert _harvester_index < len(self.harvesters), "Invalid harvester index"
-    harvester_impl: address = self.harvesters[_harvester_index].implementation
-
-    deployed_harvester: address = create_from_blueprint(harvester_impl, self)
+    deployed_harvester: address = self._deploy_harvester(_harvester_index)
 
     # transaction will revert if id booster is incorrect
     pool_info: (address, address, address, address, address, bool) = staticcall IBooster(
@@ -221,9 +217,8 @@ def deploy_new_vault(
         staticcall IVault(deployed_vault).HARVESTER_ROLE(), _harvest_manager
     )
 
-    # Approve spending on pool/staking contracts
+    # Approve spending on pool/staking contracts for strategy
     extcall IStrategy(deployed_strategy).set_approvals()
-    extcall IHarvester(deployed_harvester).set_approvals()
 
     # Link strategy and harvester dependencies
     extcall IStrategy(deployed_strategy).set_vault(deployed_vault)
@@ -295,6 +290,17 @@ def add_harvester(_protocol: String[32], _implementation: address) -> uint256:
     return self._add_harvester(_protocol, _implementation)
 
 
+@internal
+def _deploy_harvester(_harvester_index: uint256) -> address:
+    # Get harvester implementation by index
+    assert _harvester_index < len(self.harvesters), "Invalid harvester index"
+    harvester_impl: address = self.harvesters[_harvester_index].implementation
+    deployed_harvester: address = create_from_blueprint(harvester_impl, self)
+    extcall IHarvester(deployed_harvester).set_approvals()
+    log HarvesterDeployed(index=_harvester_index, harvester=deployed_harvester)
+    return deployed_harvester
+
+
 @external
 def deploy_harvester_instance(_harvester_index: uint256, _strategy: address) -> address:
     """
@@ -308,13 +314,8 @@ def deploy_harvester_instance(_harvester_index: uint256, _strategy: address) -> 
     @custom:reverts
         - If the harvester index is invalid (>= harvesters array length)
     """
-    # Get harvester implementation by index
-    assert _harvester_index < len(self.harvesters), "Invalid harvester index"
-    harvester_impl: address = self.harvesters[_harvester_index].implementation
-    deployed_harvester: address = create_from_blueprint(harvester_impl, self)
-    extcall IHarvester(deployed_harvester).set_approvals()
+    deployed_harvester: address = self._deploy_harvester(_harvester_index)
     extcall IHarvester(deployed_harvester).set_strategy(_strategy)
-    log HarvesterDeployed(index=_harvester_index, harvester=deployed_harvester)
     return deployed_harvester
 
 
