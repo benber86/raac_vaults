@@ -70,7 +70,7 @@ def set_extra_reward_hook(_new_hook: address):
     @notice Sets a hook contract to handle additional reward tokens beyond CVX/CRV
     @param _new_hook Address of the hook contract to call during swap operations
     @dev Only callable by strategy contract
-    @dev Hook contract is responsible for processing extra rewards and returning ETH
+    @dev Hook contract is responsible for processing extra rewards and returning crvUSD
     @dev Can also be used to unwrap ERC4626 rewards to underlying or withdraw LP tokens
          to underlying in case any of those are given as rewards
     """
@@ -85,7 +85,7 @@ def set_target_hook(_new_hook: address):
     @notice Sets a hook contract to handle swapping crvUSD to the final asset (LP token)
     @param _new_hook Address of the hook contract to call during swap operations
     @dev Only callable by strategy contract
-    @dev Hook contract is responsible for processing extra rewards and returning ETH
+    @dev Hook contract is responsible for adding crvUSD liq and returning the target LP asset
     """
     assert msg.sender == self.strategy, "Strategy only"
     self.target_hook = _new_hook
