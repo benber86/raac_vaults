@@ -72,7 +72,7 @@ def harvest(
     """
     assert cow_swapper.swapper.strategy != empty(address)
     assert (msg.sender == cow_swapper.swapper.strategy), "Strategy only"
-    tokens_to_swap: DynArray[address, cow_swapper.MAX_TOKENS] = [
+    tokens_to_swap: DynArray[address, cow_swapper.constants.MAX_TOKENS] = [
         constants.CRV_TOKEN, constants.CVX_TOKEN
     ]
     for i: uint256 in range(constants.MAX_REWARD_TOKENS):
@@ -80,8 +80,8 @@ def harvest(
             break
         tokens_to_swap.append(_extra_rewards[i])
 
-    buy_amounts: DynArray[uint256, cow_swapper.MAX_TOKENS] = abi_decode(
-        _harvester_calldata, DynArray[uint256, cow_swapper.MAX_TOKENS]
+    buy_amounts: DynArray[uint256, cow_swapper.constants.MAX_TOKENS] = abi_decode(
+        _harvester_calldata, DynArray[uint256, cow_swapper.constants.MAX_TOKENS]
     )
     return cow_swapper._swap(
         _caller,
