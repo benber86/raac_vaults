@@ -31,6 +31,8 @@ from src.modules.swappers import swapper
 
 initializes: swapper
 
+exports: constants.MAX_TOKENS
+
 exports: (
     swapper.extra_reward_hook,
     swapper.factory,
@@ -126,8 +128,6 @@ struct TokenOrderInfo:
     sell_amount: uint256
 
 
-# 10 extra reward tokens max + cvx/crv
-MAX_TOKENS: public(constant(uint256)) = constants.MAX_REWARD_TOKENS + 2
 COMPOSABLE_COW: public(constant(address)) = 0xfdaFc9d1902f4e0b84f65F49f244b32b31013b74
 VAULT_RELAYER: public(constant(address)) = 0xC92E8bdf79f0507f65a392b0ab4667716BFE0110
 ORDER_KIND_SELL: constant(bytes32) = keccak256("sell")
@@ -196,8 +196,8 @@ def _swap(
     _min_amount_out: uint256,
     _reward_hook_calldata: Bytes[4096],
     _target_hook_calldata: Bytes[4096],
-    _tokens: DynArray[address, MAX_TOKENS],
-    _buy_amounts: DynArray[uint256, MAX_TOKENS],
+    _tokens: DynArray[address, constants.MAX_TOKENS],
+    _buy_amounts: DynArray[uint256, constants.MAX_TOKENS],
 ) -> uint256:
     """
     @notice Submit multiple token swaps to a single target token
@@ -222,7 +222,7 @@ def _swap(
             value=0,
         )
 
-    for i: uint256 in range(MAX_TOKENS):
+    for i: uint256 in range(constants.MAX_TOKENS):
         if i == len(_tokens):
             break
         if not self.token_orders[_tokens[i]]:
