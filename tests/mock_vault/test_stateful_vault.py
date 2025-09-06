@@ -1,4 +1,5 @@
 from collections import namedtuple
+from fractions import Fraction
 
 import boa
 import pytest
@@ -127,7 +128,8 @@ class StatefulVault(RuleBasedStateMachine):
         if user_shares == 0:
             return
 
-        shares_to_withdraw = int(frac * user_shares)
+        f = Fraction(frac).limit_denominator(10**12)
+        shares_to_withdraw = user_shares * f.numerator // f.denominator
         if shares_to_withdraw == 0:
             return
 
@@ -228,7 +230,8 @@ class StatefulVault(RuleBasedStateMachine):
         if user_shares == 0:
             return
 
-        shares_to_redeem = int(frac * user_shares)
+        f = Fraction(frac).limit_denominator(10**12)
+        shares_to_redeem = user_shares * f.numerator // f.denominator
         if shares_to_redeem == 0:
             return
 
@@ -572,7 +575,8 @@ class StatefulVault(RuleBasedStateMachine):
         bal = self.mock_vault.balanceOf(user)
         if bal == 0:
             return
-        sh = int(frac * bal)
+        f = Fraction(frac).limit_denominator(10**12)
+        sh = bal * f.numerator // f.denominator
         a = self.mock_vault.previewRedeem(sh)
         with boa.env.prank(user):
             got = self.mock_vault.redeem(sh, user, user)
