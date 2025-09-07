@@ -6,6 +6,8 @@ DECIMALS: constant(uint256) = 10000
 MAX_PLATFORM_FEE: constant(uint256) = 3000
 MAX_CALLER_FEE: constant(uint256) = 1000
 MAX_REWARD_TOKENS: constant(uint256) = 10
+# 10 extra reward tokens max + cvx/crv
+MAX_TOKENS: public(constant(uint256)) = MAX_REWARD_TOKENS + 2
 CVX_TOKEN: constant(address) = 0x4e3FBD56CD56c3e72c1403e103b45Db9da5B9D2B
 CRV_TOKEN: constant(address) = 0xD533a949740bb3306d119CC777fa900bA034cd52
 CRVUSD_TOKEN: constant(address) = 0xf939E0A03FB07F59A73314E73794Be0E57ac1b4E

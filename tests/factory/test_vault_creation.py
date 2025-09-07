@@ -45,6 +45,7 @@ def test_vault_deployment_with_hooks(
             strategy_manager,
             extra_hook_addr,
             target_hook_addr,
+            0,
         )
     )
 
@@ -91,6 +92,7 @@ def test_vault_deployment_reverts_for_large_booster_id(
             strategy_manager,
             ZERO_ADDRESS,
             ZERO_ADDRESS,
+            0,
         )
 
 
@@ -99,7 +101,13 @@ def test_vault_deployment_reverts_for_shutdown_pool(
 ):
     with pytest.raises(Exception):
         vault_factory.deploy_new_vault(
-            2, 0, harvest_manager, strategy_manager, ZERO_ADDRESS, ZERO_ADDRESS
+            2,
+            0,
+            harvest_manager,
+            strategy_manager,
+            ZERO_ADDRESS,
+            ZERO_ADDRESS,
+            0,
         )
 
 
@@ -124,6 +132,7 @@ def test_parametrized_vault_deployment(
             strategy_manager,
             ZERO_ADDRESS,
             add_liquidity_hook.address,
+            0,
         )
     )
 
@@ -145,6 +154,7 @@ def test_vault_deployment_reverts_invalid_harvester_index(
             strategy_manager,
             ZERO_ADDRESS,
             ZERO_ADDRESS,
+            0,
         )
 
 
@@ -164,6 +174,7 @@ def test_cow_vault_deployment(
             strategy_manager,
             ZERO_ADDRESS,
             add_liquidity_hook.address,
+            0,
         )
     )
 

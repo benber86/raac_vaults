@@ -31,6 +31,8 @@ from src.modules.swappers import swapper
 
 initializes: swapper
 
+exports: constants.MAX_TOKENS
+
 exports: (
     swapper.extra_reward_hook,
     swapper.factory,
@@ -126,8 +128,6 @@ struct TokenOrderInfo:
     sell_amount: uint256
 
 
-# 10 extra reward tokens max + cvx/crv
-MAX_TOKENS: public(constant(uint256)) = constants.MAX_REWARD_TOKENS + 2
 COMPOSABLE_COW: public(constant(address)) = 0xfdaFc9d1902f4e0b84f65F49f244b32b31013b74
 VAULT_RELAYER: public(constant(address)) = 0xC92E8bdf79f0507f65a392b0ab4667716BFE0110
 ORDER_KIND_SELL: constant(bytes32) = keccak256("sell")
@@ -164,12 +164,21 @@ def __init__(_factory: address):
 
 
 @external
-def set_delay(delay: uint256):
+def set_delay(_delay: uint256):
+    """
+    @notice Set the validity period for CoW Protocol conditional orders
+    @param _delay Time in seconds that orders remain valid after creation
+    @dev The delay determines how long conditional orders stay active before expiring.
+         Orders can only be refreshed/updated after the delay period has passed since
+         their last_order_time. This prevents excessive order creation while ensuring
+         orders don't become stale with outdated pricing. Must be less than 7 days.
+         Only callable by addresses with HARVESTER_ROLE.
+    """
     vault: IVault = IVault(staticcall IStrategy(swapper.strategy).vault())
     assert staticcall vault.hasRole(staticcall vault.HARVESTER_ROLE(), msg.sender), "Manager only"
-    assert (delay < DAY * 7), "Delay too long"
-    self.delay = delay
-    log DelayUpdated(delay=delay)
+    assert (_delay < DAY * 7), "Delay too long"
+    self.delay = _delay
+    log DelayUpdated(delay=_delay)
 
 
 @external
@@ -196,8 +205,8 @@ def _swap(
     _min_amount_out: uint256,
     _reward_hook_calldata: Bytes[4096],
     _target_hook_calldata: Bytes[4096],
-    _tokens: DynArray[address, MAX_TOKENS],
-    _buy_amounts: DynArray[uint256, MAX_TOKENS],
+    _tokens: DynArray[address, constants.MAX_TOKENS],
+    _buy_amounts: DynArray[uint256, constants.MAX_TOKENS],
 ) -> uint256:
     """
     @notice Submit multiple token swaps to a single target token
@@ -222,7 +231,7 @@ def _swap(
             value=0,
         )
 
-    for i: uint256 in range(MAX_TOKENS):
+    for i: uint256 in range(constants.MAX_TOKENS):
         if i == len(_tokens):
             break
         if not self.token_orders[_tokens[i]]:
@@ -423,7 +432,6 @@ def isValidSignature(_hash: bytes32, _signature: Bytes[2048]) -> bytes4:
     # Verify the order using existing verify logic
     # Extract static input from order (assuming sellToken is the static input)
     static_input: Bytes[20] = concat(b"", convert(order.sellToken, bytes20))
-    domain_separator: bytes32 = staticcall IComposableCoW(COMPOSABLE_COW).domainSeparator()
     self._verify(
         msg.sender,  # owner
         msg.sender,  # _sender

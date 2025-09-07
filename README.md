@@ -12,28 +12,54 @@ The factory allows users to create ERC4626-compliant vaults that automatically c
 3. Users deposit LP tokens into the vault and receive vault shares
 4. Rewards accumulate automatically from Convex staking
 5. Anyone with the Harvester role calls `harvest()` to compound rewards
-6. Users can withdraw their LP tokens plus compounded rewards anytime
+6. Rewards are streamed overtime in non linear fashion to prevent users jumping in and out of the vault at harvest time for a quick profit
+7. Users can withdraw their LP tokens plus compounded, unlocked rewards anytime
+7. Deployments are permissionless, but the protocol (RAAC) will only manage its own vaults.
+
+### Protocol Diagram
+
+<img src="diagram.png">
 
 ### Out of Audit Scope
 The following modules and contracts are not to be audited:
 
-- snekmate's `ownable` and `access_control` modules (already audited)
-- `add_liquidity.vy` hook
+- The snekmate library's `ownable` and `access_control` modules (already audited)
+- The hook at `add_liquidity.vy`
 
 
 ## Management Roles & Trust Assumptions
 
+### Default Admin
+- **Intended Actor(s)**: DAO governance.
+The role is granted to the vault deployer by default, and should be transferred to the DAO afterwards.
+
+The admin can:
+- Grant and revoke roles such as Strategy manager and Harvester roles.
+- Update a vault's harvester and hook contracts if they become deprecated and a migration is needed
+- Set the period over which compounded rewards are unlocked
+
 ### Strategy Manager
-- **Intended Actor(s)**: DAO governance
-- **Permissions**: Configure strategy parameters, fees, and harvester settings
+- **Intended Actor(s)**: DAO governance or DAO whitelisted actor
+
+
+The strategy manager is intended to be a trusted DAO delegate that can act more reactively than the DAO on time-critical tasks:
+
+- Set the amount of fees on yield that go back to the protocol within the specified bounds
+- Set caller fees which reimburses the harvester for gas spent harvesting. Caller fees should be set dynamically depending on market conditions (gas price), harvester type (gas cost of curve vs cow harvest), and desired frequency of compounding (as high caller fees will make frequent harvests profitable)
+- Update a vault's harvester and hook contracts if they become deprecated and a migration is needed
+- Set the period over which compounded rewards are unlocked
+
 
 ### Harvester Manager
-- **Intended Actor(s)**: Keeper bots
-- **Permissions**: Trigger harvest operations
-- **Options**:
-  - Single trusted keeper for efficiency
-  - Whitelist contract for multiple authorized keepers
-  - Permissionless contract for fully decentralized harvesting
+- **Intended Actor(s)**: Keeper bots whitelisted by the DAO
+
+The harvest manager can:
+- Call the `harvest` function to compound rewards
+
+The harvest manager needs to be a trusted actor as it is responsible for setting `min_amount_out` values during the harvest to prevent losses related to slippage and MEV.
+It is possible to set up multiple harvest managers by granting the role to a proxy contract that would manage a whitelist of authorized callers.
+
+For CoW harvesters, the ability to set an accurate `min_amount_out` is less important as the comptetitive process among CoW solvers almost always results in optimal prices. For instance, Curve DAO has been selling fees from its DEX in various tokens via CoW swap in a permissionless manner with no specified `min_amount_out` (_i.e._ 0) for over a year with no losses and excellent price execution. While not recommended, this means that CoW harvesters could possibly be made permissionless (by assigning the manager role to a proxy contract with no restrictions on calling harvest).
 
 
 
@@ -106,7 +132,7 @@ The protocol supports two harvester implementations, each optimized for differen
 
 #### Infrastructure needed for the CoW Harvester
 
-Orders posted to the Composable CoW contract are not automatically picked up by searchers. To ensure that that order data makes it to the CoW orderbook, the harvest manager(s) should run a [watchtower](https://github.com/cowprotocol/watch-tower) instance.
+Orders posted to the Composable CoW contract are not automatically picked up by searchers. To ensure that the order data makes it to the CoW orderbook, the harvest manager(s) should run a [watchtower](https://github.com/cowprotocol/watch-tower) instance.
 
 Watchtower can be run in a container and the configuration is simple. Create a `config.json` file:
 

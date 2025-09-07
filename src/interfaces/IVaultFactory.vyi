@@ -53,10 +53,13 @@ def set_treasury(new_treasury: address):
 @external
 def deploy_new_vault(
     booster_id: uint256,
+    harvester_index: uint256,
     harvest_manager: address,
     strategy_manager: address,
     harvester_reward_hook: address,
     harvester_target_hook: address,
+    seed: uint256,
+    profit_max_unlock_time: uint256,
 ) -> (address, address, address):
     ...
 

@@ -38,6 +38,14 @@ def test_set_treasury_reverts_non_owner(vault_factory, accounts):
             vault_factory.set_treasury(new_treasury)
 
 
+def test_set_treasury_reverts_zero_address(vault_factory, accounts):
+    owner = vault_factory.owner()
+
+    with boa.env.prank(owner):
+        with boa.reverts("Treasury cannot be empty"):
+            vault_factory.set_treasury(ZERO_ADDRESS)
+
+
 def test_ownership_transfer_reverts_non_owner(vault_factory, accounts):
     non_owner = accounts[1]
     new_owner = accounts[2]
