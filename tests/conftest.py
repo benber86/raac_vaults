@@ -216,6 +216,7 @@ def deploy_permissioned_vault_for_pool(
             strategy_manager,
             extra_reward_hook,
             target_hook,
+            0,
         )
 
     return inner
@@ -381,6 +382,7 @@ def deploy_cow_vault_for_pool(
             strategy_manager,
             extra_reward_hook,
             target_hook,
+            0,
         )
 
     return inner

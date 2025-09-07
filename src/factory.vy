@@ -130,7 +130,7 @@ def deploy_new_vault(
     _strategy_manager: address,
     _harvester_reward_hook: address,
     _harvester_target_hook: address,
-    _seed: uint256 = 0,
+    _seed: uint256,
     _profit_max_unlock_time: uint256 = 604800,  # 1 week
 ) -> (address, address, address):
     """
@@ -147,7 +147,7 @@ def deploy_new_vault(
     @param _strategy_manager Address who will be authorized to configure the strategy
     @param _harvester_reward_hook Address of extra reward hook for harvester (optional).
     @param _harvester_target_hook Address of target hook for harvester (optional).
-    @param _seed Initial deposit amount to prevent inflation attacks through donation (optional).
+    @param _seed Initial deposit amount to prevent inflation attacks through donation.
                If > 0, transfers asset from msg.sender and deposits into vault.
     @param _profit_max_unlock_time The amount of time profits will be locked for streaming
                (default: 7 days)
