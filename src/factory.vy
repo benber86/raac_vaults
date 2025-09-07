@@ -145,8 +145,8 @@ def deploy_new_vault(
     @param _harvester_index Index of the harvester implementation in the harvesters array
     @param _harvest_manager Address who will be authorized to execute harvests
     @param _strategy_manager Address who will be authorized to configure the strategy
-    @param _harvester_reward_hook Address of extra reward hook for harvester (optional).
-    @param _harvester_target_hook Address of target hook for harvester (optional).
+    @param _harvester_reward_hook Address of extra reward hook for harvester (use address zero to skip).
+    @param _harvester_target_hook Address of target hook for harvester (use address zero to skip).
     @param _seed Initial deposit amount to prevent inflation attacks through donation.
                If > 0, transfers asset from msg.sender and deposits into vault.
     @param _profit_max_unlock_time The amount of time profits will be locked for streaming

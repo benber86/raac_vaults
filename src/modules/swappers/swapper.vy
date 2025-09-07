@@ -4,7 +4,6 @@
 
 from ethereum.ercs import IERC20
 from src.modules import constants
-from src.interfaces import IStrategy
 from src.interfaces import IVaultFactory
 
 factory: public(reentrant(immutable(address)))

@@ -164,12 +164,21 @@ def __init__(_factory: address):
 
 
 @external
-def set_delay(delay: uint256):
+def set_delay(_delay: uint256):
+    """
+    @notice Set the validity period for CoW Protocol conditional orders
+    @param _delay Time in seconds that orders remain valid after creation
+    @dev The delay determines how long conditional orders stay active before expiring.
+         Orders can only be refreshed/updated after the delay period has passed since
+         their last_order_time. This prevents excessive order creation while ensuring
+         orders don't become stale with outdated pricing. Must be less than 7 days.
+         Only callable by addresses with HARVESTER_ROLE.
+    """
     vault: IVault = IVault(staticcall IStrategy(swapper.strategy).vault())
     assert staticcall vault.hasRole(staticcall vault.HARVESTER_ROLE(), msg.sender), "Manager only"
-    assert (delay < DAY * 7), "Delay too long"
-    self.delay = delay
-    log DelayUpdated(delay=delay)
+    assert (_delay < DAY * 7), "Delay too long"
+    self.delay = _delay
+    log DelayUpdated(delay=_delay)
 
 
 @external
@@ -423,7 +432,6 @@ def isValidSignature(_hash: bytes32, _signature: Bytes[2048]) -> bytes4:
     # Verify the order using existing verify logic
     # Extract static input from order (assuming sellToken is the static input)
     static_input: Bytes[20] = concat(b"", convert(order.sellToken, bytes20))
-    domain_separator: bytes32 = staticcall IComposableCoW(COMPOSABLE_COW).domainSeparator()
     self._verify(
         msg.sender,  # owner
         msg.sender,  # _sender
