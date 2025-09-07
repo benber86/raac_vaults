@@ -17,8 +17,6 @@
 
 from ethereum.ercs import IERC20
 from src.modules import vault
-from src.modules import constants
-from src.interfaces import IStrategy
 
 initializes: vault
 

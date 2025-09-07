@@ -130,7 +130,7 @@ def deploy_new_vault(
     _strategy_manager: address,
     _harvester_reward_hook: address,
     _harvester_target_hook: address,
-    _seed: uint256 = 0,
+    _seed: uint256,
     _profit_max_unlock_time: uint256 = 604800,  # 1 week
 ) -> (address, address, address):
     """
@@ -145,9 +145,9 @@ def deploy_new_vault(
     @param _harvester_index Index of the harvester implementation in the harvesters array
     @param _harvest_manager Address who will be authorized to execute harvests
     @param _strategy_manager Address who will be authorized to configure the strategy
-    @param _harvester_reward_hook Address of extra reward hook for harvester (optional).
-    @param _harvester_target_hook Address of target hook for harvester (optional).
-    @param _seed Initial deposit amount to prevent inflation attacks through donation (optional).
+    @param _harvester_reward_hook Address of extra reward hook for harvester (use address zero to skip).
+    @param _harvester_target_hook Address of target hook for harvester (use address zero to skip).
+    @param _seed Initial deposit amount to prevent inflation attacks through donation.
                If > 0, transfers asset from msg.sender and deposits into vault.
     @param _profit_max_unlock_time The amount of time profits will be locked for streaming
                (default: 7 days)
@@ -161,11 +161,7 @@ def deploy_new_vault(
         - If seed > 0 and caller hasn't approved factory for asset transfer.
     """
 
-    # Get harvester implementation by index
-    assert _harvester_index < len(self.harvesters), "Invalid harvester index"
-    harvester_impl: address = self.harvesters[_harvester_index].implementation
-
-    deployed_harvester: address = create_from_blueprint(harvester_impl, self)
+    deployed_harvester: address = self._deploy_harvester(_harvester_index)
 
     # transaction will revert if id booster is incorrect
     pool_info: (address, address, address, address, address, bool) = staticcall IBooster(
@@ -221,9 +217,8 @@ def deploy_new_vault(
         staticcall IVault(deployed_vault).HARVESTER_ROLE(), _harvest_manager
     )
 
-    # Approve spending on pool/staking contracts
+    # Approve spending on pool/staking contracts for strategy
     extcall IStrategy(deployed_strategy).set_approvals()
-    extcall IHarvester(deployed_harvester).set_approvals()
 
     # Link strategy and harvester dependencies
     extcall IStrategy(deployed_strategy).set_vault(deployed_vault)
@@ -270,6 +265,7 @@ def set_treasury(_new_treasury: address):
     @param _new_treasury Treasury address
     """
     ownable._check_owner()
+    assert _new_treasury != empty(address), "Treasury cannot be empty"
     self.treasury = _new_treasury
     log TreasuryUpdated(treasury=_new_treasury)
 
@@ -294,6 +290,17 @@ def add_harvester(_protocol: String[32], _implementation: address) -> uint256:
     return self._add_harvester(_protocol, _implementation)
 
 
+@internal
+def _deploy_harvester(_harvester_index: uint256) -> address:
+    # Get harvester implementation by index
+    assert _harvester_index < len(self.harvesters), "Invalid harvester index"
+    harvester_impl: address = self.harvesters[_harvester_index].implementation
+    deployed_harvester: address = create_from_blueprint(harvester_impl, self)
+    extcall IHarvester(deployed_harvester).set_approvals()
+    log HarvesterDeployed(index=_harvester_index, harvester=deployed_harvester)
+    return deployed_harvester
+
+
 @external
 def deploy_harvester_instance(_harvester_index: uint256, _strategy: address) -> address:
     """
@@ -307,13 +314,8 @@ def deploy_harvester_instance(_harvester_index: uint256, _strategy: address) -> 
     @custom:reverts
         - If the harvester index is invalid (>= harvesters array length)
     """
-    # Get harvester implementation by index
-    assert _harvester_index < len(self.harvesters), "Invalid harvester index"
-    harvester_impl: address = self.harvesters[_harvester_index].implementation
-    deployed_harvester: address = create_from_blueprint(harvester_impl, self)
-    extcall IHarvester(deployed_harvester).set_approvals()
+    deployed_harvester: address = self._deploy_harvester(_harvester_index)
     extcall IHarvester(deployed_harvester).set_strategy(_strategy)
-    log HarvesterDeployed(index=_harvester_index, harvester=deployed_harvester)
     return deployed_harvester
 
 

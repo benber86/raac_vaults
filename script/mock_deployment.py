@@ -94,6 +94,7 @@ def deploy() -> VyperContract:
         deployer.address,  # strategy manager
         ZERO_ADDRESS,
         add_liquidity_hook.address,
+        0,
     )
 
     for contract in contracts:
