@@ -148,3 +148,30 @@ def test_deploy_harvester_instance_invalid_harvester_index(
 
     with boa.reverts("Invalid harvester index"):
         vault_factory.deploy_harvester_instance(999, vault_addr)
+
+
+def test_update_booster_id_valid_vault(vault_factory, pyusd_vault):
+    vault_addr, strategy_addr, harvester_addr = pyusd_vault
+
+    vault_id = vault_factory.vault_to_id(vault_addr)
+    initial_record = vault_factory.vault_registry(vault_id)
+    new_booster_id = 999
+
+    with boa.env.prank(vault_addr):
+        vault_factory.update_booster_id(new_booster_id)
+
+    updated_record = vault_factory.vault_registry(vault_id)
+    assert updated_record.booster_id == new_booster_id
+    assert updated_record.booster_id != initial_record.booster_id
+    assert updated_record.vault == initial_record.vault
+    assert updated_record.strategy == initial_record.strategy
+    assert updated_record.harvester == initial_record.harvester
+    assert updated_record.token == initial_record.token
+
+
+def test_update_booster_id_invalid_vault(vault_factory, accounts):
+    fake_vault = accounts[5]
+
+    with boa.reverts("Vault only"):
+        with boa.env.prank(fake_vault):
+            vault_factory.update_booster_id(999)
