@@ -286,7 +286,7 @@ def _swap(
 
     target_asset: address = staticcall IStrategy(swapper.strategy).asset()
     target_asset_balance: uint256 = staticcall IERC20(target_asset).balanceOf(self)
-    assert target_asset_balance > _min_amount_out, "Slippage"
+    assert target_asset_balance >= _min_amount_out, "Slippage"
     assert extcall IERC20(target_asset).transfer(
         swapper.strategy,
         target_asset_balance,
@@ -319,6 +319,34 @@ def getTradeableOrder(
     @return Order parameters
     """
     sell_token: address = convert(convert(_static_input, bytes20), address)
+
+    if not self.token_orders[sell_token]:
+        raw_revert(
+            abi_encode(
+                block.timestamp + (DAY),
+                "Order not registered",
+                method_id=method_id("PollTryAtEpoch(uint256,string)"),
+            )
+        )
+
+    if self.token_order_info[sell_token].last_order_time == 0:
+        raw_revert(
+            abi_encode(
+                block.timestamp + (DAY),
+                "Order never initialized",
+                method_id=method_id("PollTryAtEpoch(uint256,string)"),
+            )
+        )
+
+    if self.token_order_info[sell_token].sell_amount == 0:
+        raw_revert(
+            abi_encode(
+                block.timestamp + (DAY),
+                "No sell amount",
+                method_id=method_id("PollTryAtEpoch(uint256,string)"),
+            )
+        )
+
     order: GPv2OrderData = self._create_order(sell_token)
     sell_balance: uint256 = staticcall IERC20(sell_token).balanceOf(self)
     if sell_balance == 0:
@@ -356,12 +384,14 @@ def _verify(
     @notice Verify that a proposed order matches our conditions
     @dev This is called by ComposableCoW to validate orders
     """
+    if _offchain_input != b"":
+        raw_revert(abi_encode("NonZeroOffchainInput", method_id=method_id("OrderNotValid(string)")))
+
     sell_token: address = convert(convert(_static_input, bytes20), address)
     if not self.token_orders[sell_token]:
         raw_revert(abi_encode("Wrong token", method_id=method_id("OrderNotValid(string)")))
 
     expected_order: GPv2OrderData = self._create_order(sell_token)
-    expected_order.sellAmount = _order.sellAmount
     expected_order.buyAmount = max(_order.buyAmount, expected_order.buyAmount)
     if abi_encode(expected_order) != abi_encode(_order):
         raw_revert(abi_encode("Invalid order", method_id=method_id("OrderNotValid(string)")))
@@ -488,6 +518,9 @@ def cancel_order(_token: address):
     order_hash: bytes32 = staticcall IComposableCoW(COMPOSABLE_COW).hash(order_params)
 
     extcall IComposableCoW(COMPOSABLE_COW).remove(order_hash)
+
+    assert extcall IERC20(_token).approve(VAULT_RELAYER, 0, default_return_value=True)
+
     self.token_orders[_token] = False
     self.token_order_info[_token] = TokenOrderInfo(last_order_time=0, buy_amount=0, sell_amount=0)
 

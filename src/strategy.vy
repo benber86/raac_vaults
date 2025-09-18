@@ -30,7 +30,7 @@ asset: public(reentrant(immutable(address)))
 # Contract handling the processing of rewards
 harvester: public(reentrant(address))
 # Convex pool ID for deposits
-booster_id: public(immutable(uint256))
+booster_id: public(uint256)
 # Convex staking contract for this pool
 rewards_contract: public(immutable(address))
 # Fee taken by the platform (basis points)
@@ -77,7 +77,7 @@ def __init__(
     @dev Sets initial platform fee to 20% and caller fee to 1%
     """
 
-    booster_id = _booster_id
+    self.booster_id = _booster_id
     rewards_contract = _rewards_contract
     asset = _asset
     self.harvester = _harvester
@@ -120,7 +120,7 @@ def set_platform_fee(_platform_fee: uint256):
     @param _platform_fee New platform fee in basis points (e.g., 2000 = 20%)
     """
     assert msg.sender == self.vault, "Vault only"
-    assert _platform_fee < constants.MAX_PLATFORM_FEE, "Fee too high"
+    assert _platform_fee <= constants.MAX_PLATFORM_FEE, "Fee too high"
     self.platform_fee = _platform_fee
     log PlatformFeeUpdated(platform_fee=_platform_fee)
 
@@ -132,7 +132,7 @@ def set_caller_fee(_caller_fee: uint256):
     @param _caller_fee New caller fee in basis points (e.g., 100 = 1%)
     """
     assert msg.sender == self.vault, "Vault only"
-    assert _caller_fee < constants.MAX_CALLER_FEE, "Fee too high"
+    assert _caller_fee <= constants.MAX_CALLER_FEE, "Fee too high"
     self.caller_fee = _caller_fee
     log CallerFeeUpdated(caller_fee=_caller_fee)
 
@@ -168,6 +168,17 @@ def set_target_hook(_new_hook: address):
     """
     assert msg.sender == self.vault, "Vault only"
     extcall IHarvester(self.harvester).set_target_hook(_new_hook)
+
+
+@external
+def update_booster_id(_new_booster_id: uint256):
+    """
+    @notice Update the Convex booster pool ID for deposits
+    @param _new_booster_id New Convex pool ID to use for deposits
+    @dev Only callable by vault contract. Used when original pool is shut down.
+    """
+    assert msg.sender == self.vault, "Vault only"
+    self.booster_id = _new_booster_id
 
 
 @external
@@ -209,7 +220,7 @@ def total_assets() -> uint256:
 
 @internal
 def _deposit(_amount: uint256):
-    extcall IBooster(constants.CONVEX_BOOSTER).deposit(booster_id, _amount, True)
+    extcall IBooster(constants.CONVEX_BOOSTER).deposit(self.booster_id, _amount, True)
 
 
 @internal

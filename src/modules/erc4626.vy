@@ -935,10 +935,11 @@ def _process_profit_streaming(profit_assets: uint256, pre_harvest_assets: uint25
             )
         # new_profit_locking_period is a weighted average between the remaining time of the previously locked
         # shares and the profit_max_unlock_time
-        new_profit_locking_period: uint256 = (
+        new_profit_locking_period: uint256 = max(
             (
                 previously_locked_time + shares_to_lock * self.profit_max_unlock_time
-            ) // total_locked_shares
+            ) // total_locked_shares,
+            1,
         )
 
         # Calculate how many shares unlock per second.

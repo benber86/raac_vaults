@@ -38,6 +38,11 @@ def set_target_hook(new_hook: address):
 
 
 @external
+def update_booster_id(new_booster_id: uint256):
+    ...
+
+
+@external
 def deposit(amount: uint256):
     ...
 

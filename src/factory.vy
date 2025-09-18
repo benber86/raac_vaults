@@ -302,20 +302,24 @@ def _deploy_harvester(_harvester_index: uint256) -> address:
 
 
 @external
-def deploy_harvester_instance(_harvester_index: uint256, _strategy: address) -> address:
+def deploy_harvester_instance(_harvester_index: uint256, _vault: address) -> address:
     """
-    @notice Deploy a standalone harvester instance tied to an existing strategy
+    @notice Deploy a standalone harvester instance tied to an existing vault's strategy
     @dev This function allows deploying additional harvester instances independently
          of vault deployment, useful for replacing or upgrading harvesters for existing
          strategies. The new harvester is deployed with necessary approvals.
     @param _harvester_index Index of the harvester implementation in the harvesters array
-    @param _strategy Address of the strategy contract that this harvester will serve
+    @param _vault Address of the factory-deployed vault contract
     @return The address of the newly deployed harvester instance
     @custom:reverts
         - If the harvester index is invalid (>= harvesters array length)
+        - If the vault is not factory-deployed
     """
+    vault_id: uint256 = self.vault_to_id[_vault]
+    assert self.vault_registry[vault_id].vault == _vault, "Vault not factory deployed"
+
     deployed_harvester: address = self._deploy_harvester(_harvester_index)
-    extcall IHarvester(deployed_harvester).set_strategy(_strategy)
+    extcall IHarvester(deployed_harvester).set_strategy(self.vault_registry[vault_id].strategy)
     return deployed_harvester
 
 
@@ -339,5 +343,27 @@ def update_harvester(_new_harvester: address):
         booster_id=self.vault_registry[vault_id].booster_id,
         strategy=self.vault_registry[vault_id].strategy,
         harvester=_new_harvester,
+        token=self.vault_registry[vault_id].token,
+    )
+
+
+@external
+def update_booster_id(_new_booster_id: uint256):
+    """
+    @notice Update the booster ID in the factory's vault registry
+    @dev This function is called by vault contracts through their update_booster_id
+         function to maintain registry consistency when booster pools are shut down.
+    @param _new_booster_id New Convex booster pool ID
+    @custom:access Only callable by registered vault contracts
+    @custom:reverts
+        - If the caller is not a registered vault contract
+    """
+    vault_id: uint256 = self.vault_to_id[msg.sender]
+    assert self.vault_registry[vault_id].vault == msg.sender, "Vault only"
+    self.vault_registry[vault_id] = VaultRecord(
+        vault=self.vault_registry[vault_id].vault,
+        booster_id=_new_booster_id,
+        strategy=self.vault_registry[vault_id].strategy,
+        harvester=self.vault_registry[vault_id].harvester,
         token=self.vault_registry[vault_id].token,
     )
