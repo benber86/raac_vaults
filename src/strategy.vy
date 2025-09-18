@@ -120,7 +120,7 @@ def set_platform_fee(_platform_fee: uint256):
     @param _platform_fee New platform fee in basis points (e.g., 2000 = 20%)
     """
     assert msg.sender == self.vault, "Vault only"
-    assert _platform_fee < constants.MAX_PLATFORM_FEE, "Fee too high"
+    assert _platform_fee <= constants.MAX_PLATFORM_FEE, "Fee too high"
     self.platform_fee = _platform_fee
     log PlatformFeeUpdated(platform_fee=_platform_fee)
 
@@ -132,7 +132,7 @@ def set_caller_fee(_caller_fee: uint256):
     @param _caller_fee New caller fee in basis points (e.g., 100 = 1%)
     """
     assert msg.sender == self.vault, "Vault only"
-    assert _caller_fee < constants.MAX_CALLER_FEE, "Fee too high"
+    assert _caller_fee <= constants.MAX_CALLER_FEE, "Fee too high"
     self.caller_fee = _caller_fee
     log CallerFeeUpdated(caller_fee=_caller_fee)
 
