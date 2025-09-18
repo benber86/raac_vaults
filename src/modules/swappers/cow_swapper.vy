@@ -384,6 +384,9 @@ def _verify(
     @notice Verify that a proposed order matches our conditions
     @dev This is called by ComposableCoW to validate orders
     """
+    if _offchain_input != b"":
+        raw_revert(abi_encode("NonZeroOffchainInput", method_id=method_id("OrderNotValid(string)")))
+
     sell_token: address = convert(convert(_static_input, bytes20), address)
     if not self.token_orders[sell_token]:
         raw_revert(abi_encode("Wrong token", method_id=method_id("OrderNotValid(string)")))
