@@ -319,6 +319,34 @@ def getTradeableOrder(
     @return Order parameters
     """
     sell_token: address = convert(convert(_static_input, bytes20), address)
+
+    if not self.token_orders[sell_token]:
+        raw_revert(
+            abi_encode(
+                block.timestamp + (DAY),
+                "Order not registered",
+                method_id=method_id("PollTryAtEpoch(uint256,string)"),
+            )
+        )
+
+    if self.token_order_info[sell_token].last_order_time == 0:
+        raw_revert(
+            abi_encode(
+                block.timestamp + (DAY),
+                "Order never initialized",
+                method_id=method_id("PollTryAtEpoch(uint256,string)"),
+            )
+        )
+
+    if self.token_order_info[sell_token].sell_amount == 0:
+        raw_revert(
+            abi_encode(
+                block.timestamp + (DAY),
+                "No sell amount",
+                method_id=method_id("PollTryAtEpoch(uint256,string)"),
+            )
+        )
+
     order: GPv2OrderData = self._create_order(sell_token)
     sell_balance: uint256 = staticcall IERC20(sell_token).balanceOf(self)
     if sell_balance == 0:
