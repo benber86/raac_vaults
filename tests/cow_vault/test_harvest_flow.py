@@ -283,6 +283,12 @@ def test_cow_order_cancellation(
     assert not crv_order_exists_after, "Order should be cancelled"
     assert order_info_after.last_order_time == 0, "Order info should be reset"
 
+    vault_relayer = harvester_contract.VAULT_RELAYER()
+    approval_amount = crv_token.allowance(harvester_addr, vault_relayer)
+    assert (
+        approval_amount == 0
+    ), "Token approval should be revoked after cancellation"
+
 
 def test_cow_order_expiry(
     test_cow_vault, funded_accounts, crvusd_pool, crv_token, harvest_manager
