@@ -488,6 +488,9 @@ def cancel_order(_token: address):
     order_hash: bytes32 = staticcall IComposableCoW(COMPOSABLE_COW).hash(order_params)
 
     extcall IComposableCoW(COMPOSABLE_COW).remove(order_hash)
+
+    assert extcall IERC20(_token).approve(VAULT_RELAYER, 0, default_return_value=True)
+
     self.token_orders[_token] = False
     self.token_order_info[_token] = TokenOrderInfo(last_order_time=0, buy_amount=0, sell_amount=0)
 
