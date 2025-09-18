@@ -286,7 +286,7 @@ def _swap(
 
     target_asset: address = staticcall IStrategy(swapper.strategy).asset()
     target_asset_balance: uint256 = staticcall IERC20(target_asset).balanceOf(self)
-    assert target_asset_balance > _min_amount_out, "Slippage"
+    assert target_asset_balance >= _min_amount_out, "Slippage"
     assert extcall IERC20(target_asset).transfer(
         swapper.strategy,
         target_asset_balance,
