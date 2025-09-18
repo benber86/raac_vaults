@@ -345,3 +345,25 @@ def update_harvester(_new_harvester: address):
         harvester=_new_harvester,
         token=self.vault_registry[vault_id].token,
     )
+
+
+@external
+def update_booster_id(_new_booster_id: uint256):
+    """
+    @notice Update the booster ID in the factory's vault registry
+    @dev This function is called by vault contracts through their update_booster_id
+         function to maintain registry consistency when booster pools are shut down.
+    @param _new_booster_id New Convex booster pool ID
+    @custom:access Only callable by registered vault contracts
+    @custom:reverts
+        - If the caller is not a registered vault contract
+    """
+    vault_id: uint256 = self.vault_to_id[msg.sender]
+    assert self.vault_registry[vault_id].vault == msg.sender, "Vault only"
+    self.vault_registry[vault_id] = VaultRecord(
+        vault=self.vault_registry[vault_id].vault,
+        booster_id=_new_booster_id,
+        strategy=self.vault_registry[vault_id].strategy,
+        harvester=self.vault_registry[vault_id].harvester,
+        token=self.vault_registry[vault_id].token,
+    )

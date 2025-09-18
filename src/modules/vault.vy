@@ -148,6 +148,25 @@ def update_harvester(
 
 
 @external
+def update_booster_id(_new_booster_id: uint256):
+    """
+    @notice Update the Convex booster pool ID in the strategy
+    @param _new_booster_id New Convex pool ID to use for deposits
+    @dev Used when the original pool is shut down. Only callable by strategy managers.
+    """
+    assert (
+        access_control.hasRole[STRATEGY_MANAGER_ROLE][msg.sender]
+        or access_control.hasRole[access_control.DEFAULT_ADMIN_ROLE][msg.sender]
+    )
+    extcall IStrategy(erc4626.strategy).update_booster_id(_new_booster_id)
+
+    # Update factory registry with new booster_id
+    harvester: address = staticcall IStrategy(erc4626.strategy).harvester()
+    factory: address = staticcall IHarvester(harvester).factory()
+    extcall IVaultFactory(factory).update_booster_id(_new_booster_id)
+
+
+@external
 def set_extra_reward_hook(_new_hook: address):
     assert (
         access_control.hasRole[STRATEGY_MANAGER_ROLE][msg.sender]
