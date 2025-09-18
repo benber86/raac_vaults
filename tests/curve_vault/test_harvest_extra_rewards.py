@@ -65,7 +65,7 @@ def test_vault_harvest_single_staker_with_extra_rewards(
     )
     target_hook_calldata = target_selector + target_encoded_args
 
-    # Extra reward hook calldata for RSUP -> WETH -> crvUSD using NEW ROUTER FORMAT
+    # Extra reward hook calldata for RSUP -> WETH -> crvUSD using struct-based format
     # Route: [RSUP, RSUP/WETH pool, WETH, TRICRV pool, crvUSD, 0x00, ...]
     route = [
         RSUP_TOKEN,  # Initial token
@@ -110,14 +110,15 @@ def test_vault_harvest_single_staker_with_extra_rewards(
         ZERO_ADDRESS,  # Unused
     ]
 
-    # Update function signature for new router
-    reward_sig = (
-        "process_extra_rewards(address,address[11],uint256[5][5],address[5])"
-    )
+    # Create ExtraRewardParams struct as tuple (token, route, swap_params, pools)
+    extra_reward_params = [(RSUP_TOKEN, route, swap_params, pools)]
+
+    # Update function signature for struct-based interface
+    reward_sig = "process_extra_rewards((address,address[11],uint256[5][5],address[5])[])"
     reward_selector = function_signature_to_4byte_selector(reward_sig)
     reward_encoded_args = abi_encode(
-        "(address,address[11],uint256[5][5],address[5])",
-        [RSUP_TOKEN, route, swap_params, pools],
+        "((address,address[11],uint256[5][5],address[5])[])",
+        [extra_reward_params],
     )
     reward_hook_calldata = reward_selector + reward_encoded_args
 
