@@ -125,3 +125,26 @@ def test_update_harvester_reverts_empty_address(vault_factory, pyusd_vault):
     with boa.env.prank(vault_addr):
         with boa.reverts("Invalid harvester"):
             vault_factory.update_harvester(ZERO_ADDRESS)
+
+
+def test_deploy_harvester_instance_valid_vault(vault_factory, pyusd_vault):
+    vault_addr, strategy_addr, harvester_addr = pyusd_vault
+
+    new_harvester = vault_factory.deploy_harvester_instance(0, vault_addr)
+    assert new_harvester != ZERO_ADDRESS
+
+
+def test_deploy_harvester_instance_invalid_vault(vault_factory, accounts):
+    fake_vault = accounts[5]
+
+    with boa.reverts("Vault not factory deployed"):
+        vault_factory.deploy_harvester_instance(0, fake_vault)
+
+
+def test_deploy_harvester_instance_invalid_harvester_index(
+    vault_factory, pyusd_vault
+):
+    vault_addr, strategy_addr, harvester_addr = pyusd_vault
+
+    with boa.reverts("Invalid harvester index"):
+        vault_factory.deploy_harvester_instance(999, vault_addr)

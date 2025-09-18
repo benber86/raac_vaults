@@ -70,9 +70,7 @@ def test_curve_harvester_migration_e2e(
     print(f"Expected net harvest: {expected_net_harvest / 1e18:.6f} crvUSD")
 
     # MIGRATION STEP: Create new harvester and migrate
-    new_harvester_addr = vault_factory.deploy_harvester_instance(
-        0, strategy_addr
-    )
+    new_harvester_addr = vault_factory.deploy_harvester_instance(0, vault_addr)
 
     print(f"Old Curve harvester: {old_harvester_addr}")
     print(f"New Curve harvester: {new_harvester_addr}")
