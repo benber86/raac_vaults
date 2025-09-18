@@ -392,7 +392,6 @@ def _verify(
         raw_revert(abi_encode("Wrong token", method_id=method_id("OrderNotValid(string)")))
 
     expected_order: GPv2OrderData = self._create_order(sell_token)
-    expected_order.sellAmount = _order.sellAmount
     expected_order.buyAmount = max(_order.buyAmount, expected_order.buyAmount)
     if abi_encode(expected_order) != abi_encode(_order):
         raw_revert(abi_encode("Invalid order", method_id=method_id("OrderNotValid(string)")))
