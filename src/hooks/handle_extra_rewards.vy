@@ -28,16 +28,11 @@ def process_extra_rewards(
     _rewards: DynArray[ExtraRewardParams, constants.MAX_REWARD_TOKENS],
 ):
     """
-    @notice Process multiple extra reward tokens by swapping them to crvUSD via Curve Router and applying platform fees
+    @notice Process multiple extra reward tokens by swapping them to crvUSD via Curve Router
     @param _rewards Array of reward token parameters containing token address and routing info
     @custom:reverts On failed swaps or transfers
     """
     harvester: address = msg.sender
-    strategy: address = staticcall IHarvester(harvester).strategy()
-    treasury: address = staticcall IHarvester(harvester).treasury()
-    platform_fee: uint256 = staticcall IStrategy(strategy).platform_fee()
-
-    total_crvusd_received: uint256 = 0
 
     for i: uint256 in range(constants.MAX_REWARD_TOKENS):
         if i == len(_rewards):
@@ -56,29 +51,12 @@ def process_extra_rewards(
         assert extcall IERC20(reward.token).approve(CURVE_ROUTER, amount, default_return_value=True)
 
         # Execute swap via Curve Router
+        # All crvUSD is sent directly to harvester for unified fee processing
         crvusd_received: uint256 = extcall ICurveRouter(CURVE_ROUTER).exchange(
             reward.route,
             reward.swap_params,
             amount,
             0,
             reward.pools,
-            self,
+            harvester,
         )
-
-        total_crvusd_received += crvusd_received
-
-    if total_crvusd_received > 0:
-        # Apply platform fee on total received amount
-        platform_fee_amount: uint256 = total_crvusd_received * platform_fee // 10000
-        remaining_amount: uint256 = total_crvusd_received - platform_fee_amount
-
-        # Transfer platform fee to treasury
-        if platform_fee_amount > 0:
-            assert extcall IERC20(constants.CRVUSD_TOKEN).transfer(
-                treasury, platform_fee_amount, default_return_value=True
-            ), "Treasury transfer failed"
-
-        if remaining_amount > 0:
-            assert extcall IERC20(constants.CRVUSD_TOKEN).transfer(
-                harvester, remaining_amount, default_return_value=True
-            ), "Harvester transfer failed"
