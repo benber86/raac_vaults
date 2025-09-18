@@ -21,7 +21,7 @@ def deploy():
     factory_contract = factory.at(FACTORY)
     factory_contract.add_harvester("cow v2", new_harvester_blueprint.address)
     new_harvester = factory_contract.deploy_harvester_instance(
-        factory_contract.harvester_count() - 1, STRATEGY
+        factory_contract.harvester_count() - 1, VAULT
     )
     _verify(cow_harvester.at(new_harvester))
     print(f"New harvester deployed at {new_harvester}")

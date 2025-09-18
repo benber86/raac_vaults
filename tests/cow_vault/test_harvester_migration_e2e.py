@@ -98,9 +98,7 @@ def test_cow_harvester_migration_e2e(
     )
 
     # MIGRATION STEP: Create new harvester and migrate
-    new_harvester_addr = vault_factory.deploy_harvester_instance(
-        1, strategy_addr
-    )
+    new_harvester_addr = vault_factory.deploy_harvester_instance(1, vault_addr)
 
     print(f"Old CoW harvester: {old_harvester_addr}")
     print(f"New CoW harvester: {new_harvester_addr}")

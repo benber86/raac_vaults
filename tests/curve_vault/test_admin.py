@@ -11,7 +11,7 @@ def test_vault_update_harvester(
 
     vault_contract = raac_vault.at(vault_addr)
     strategy_contract = strategy.at(strategy_addr)
-    new_harvester = vault_factory.deploy_harvester_instance(0, strategy_addr)
+    new_harvester = vault_factory.deploy_harvester_instance(0, vault_addr)
 
     vault_id = vault_factory.vault_to_id(vault_addr)
 
