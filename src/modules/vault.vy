@@ -51,6 +51,7 @@ exports: (
     erc4626.unlock_scale,
     erc4626.unlocked_shares,
     erc4626.withdraw,
+    erc4626.MIN_SHARES,
 )
 
 exports: (

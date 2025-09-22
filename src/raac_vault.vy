@@ -78,6 +78,7 @@ exports: (
     vault.update_booster_id,
     vault.update_harvester,
     vault.withdraw,
+    vault.MIN_SHARES,
 )
 
 
