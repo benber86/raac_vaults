@@ -187,6 +187,10 @@ _UNDERLYING_DECIMALS: immutable(uint8)
 # @dev Extended for profit streaming calculations.
 MAX_BPS_EXTENDED: constant(uint256) = 1_000_000_000_000
 
+# Minimum raw shares required when supply is non-zero.
+# Prevents tiny-supply states that enable donation/inflation griefing.
+MIN_SHARES: public(constant(uint256)) = 1_000_000_000_000
+
 
 # Profit streaming storage variables
 # @dev The amount of time that profits will be locked for streaming.
@@ -321,6 +325,17 @@ def totalAssets() -> uint256:
     return self._total_assets()
 
 
+@internal
+def _check_min_shares():
+    """
+    @dev Enforce a minimum raw total supply when the vault has any shares.
+         Allows supply to be zero, or at least MIN_SHARES. Applied after
+         deposit/mint and after withdraw/redeem burns.
+    """
+    supply: uint256 = erc20.totalSupply
+    assert supply == 0 or supply >= MIN_SHARES, "erc4626: deposit too small"
+
+
 @external
 @view
 def convertToShares(assets: uint256) -> uint256:
@@ -396,7 +411,11 @@ def deposit(assets: uint256, receiver: address) -> uint256:
     """
     assert assets <= self._max_deposit(receiver), "erc4626: deposit more than maximum"
     shares: uint256 = self._preview_deposit(assets)
+    # Enforce minimum supply on first mint: prevent tiny first deposits
+    if erc20.totalSupply == 0:
+        assert shares >= MIN_SHARES, "erc4626: deposit too small"
     self._deposit(msg.sender, receiver, assets, shares)
+    self._check_min_shares()
     return shares
 
 
@@ -441,8 +460,12 @@ def mint(shares: uint256, receiver: address) -> uint256:
     @return uint256 The deposited 32-byte assets amount.
     """
     assert shares <= self._max_mint(receiver), "erc4626: mint more than maximum"
+    # Enforce minimum supply on first mint: prevent tiny first mints
+    if erc20.totalSupply == 0:
+        assert shares >= MIN_SHARES, "erc4626: deposit too small"
     assets: uint256 = self._preview_mint(shares)
     self._deposit(msg.sender, receiver, assets, shares)
+    self._check_min_shares()
     return assets
 
 
@@ -977,6 +1000,7 @@ def _withdraw(
         erc20._spend_allowance(owner, sender, shares)
 
     erc20._burn(owner, shares)
+    self._check_min_shares()
 
     # withdraw from strategy - the transfer logic is handled by the strategy
     extcall IStrategy(strategy).withdraw(assets, receiver)
