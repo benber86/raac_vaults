@@ -142,7 +142,8 @@ def _swap(
             value=0,
         )
 
-    crvusd_received: uint256 = self._eth_to_crvusd(self.balance, 1)
+    self._eth_to_crvusd(self.balance, 1)
+    crvusd_received: uint256 = staticcall IERC20(constants.CRVUSD_TOKEN).balanceOf(self)
 
     # Pay the platform fee in crvUSD to the treasury
     platform_fee: uint256 = staticcall IStrategy(swapper.strategy).platform_fee()
