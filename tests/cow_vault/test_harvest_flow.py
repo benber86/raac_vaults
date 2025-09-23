@@ -283,6 +283,12 @@ def test_cow_order_cancellation(
     assert not crv_order_exists_after, "Order should be cancelled"
     assert order_info_after.last_order_time == 0, "Order info should be reset"
 
+    vault_relayer = harvester_contract.VAULT_RELAYER()
+    approval_amount = crv_token.allowance(harvester_addr, vault_relayer)
+    assert (
+        approval_amount == 0
+    ), "Token approval should be revoked after cancellation"
+
 
 def test_cow_order_expiry(
     test_cow_vault, funded_accounts, crvusd_pool, crv_token, harvest_manager
@@ -329,4 +335,56 @@ def test_cow_order_expiry(
             b"\x00" * 32,  # ctx
             static_input,  # static_input
             b"\x00",  # offchain_input
+        )
+
+
+def test_get_tradeable_order_validation(
+    test_cow_vault,
+    funded_accounts,
+    crvusd_pool,
+    crv_token,
+    cvx_token,
+    harvest_manager,
+):
+    vault_addr, strategy_addr, harvester_addr = test_cow_vault
+    harvester_contract = cow_harvester.at(harvester_addr)
+    vault_contract = raac_vault.at(vault_addr)
+
+    user = funded_accounts[0]
+    with boa.env.prank(user):
+        crvusd_pool.approve(vault_addr, 10**18)
+        vault_contract.deposit(10**18, user)
+
+    static_input = bytes.fromhex(str(crv_token.address)[2:].zfill(40))[:20]
+
+    with boa.reverts():
+        harvester_contract.getTradeableOrder(
+            harvester_addr,
+            boa.env.generate_address(),
+            b"\x00" * 32,
+            static_input,
+            b"\x00",
+        )
+
+    buy_amounts = [int(100 * 1e18), int(50 * 1e18)]
+    with boa.env.prank(harvest_manager):
+        vault_contract.harvest(
+            harvest_manager,
+            0,
+            [],
+            b"",
+            b"",
+            abi_encode("(uint256[])", [buy_amounts]),
+        )
+
+    with boa.env.prank(harvest_manager):
+        harvester_contract.cancel_order(crv_token.address)
+
+    with boa.reverts():
+        harvester_contract.getTradeableOrder(
+            harvester_addr,
+            boa.env.generate_address(),
+            b"\x00" * 32,
+            static_input,
+            b"\x00",
         )

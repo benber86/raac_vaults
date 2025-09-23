@@ -75,8 +75,11 @@ exports: (
     vault.transferFrom,
     vault.unlock_scale,
     vault.unlocked_shares,
+    vault.migrate_booster,
+    vault.admin_unwind_rewards,
     vault.update_harvester,
     vault.withdraw,
+    vault.MIN_SHARES,
 )
 
 

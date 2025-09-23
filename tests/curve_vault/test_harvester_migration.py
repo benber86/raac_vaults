@@ -57,6 +57,7 @@ def test_curve_harvester_migration_with_extra_rewards(
     funded_accounts,
     strategy_manager,
     set_up_extra_rewards_for_pool,
+    rsup_token,
 ):
     vault_addr, strategy_addr, old_harvester_addr = pyusd_vault
 
@@ -65,7 +66,6 @@ def test_curve_harvester_migration_with_extra_rewards(
 
     set_up_extra_rewards_for_pool()
 
-    rsup_token = ABIContractFactory("ERC20", ERC20_ABI).at(RSUP_TOKEN)
     cvx_token = ABIContractFactory("ERC20", ERC20_ABI).at(CVX_TOKEN)
     crv_token = ABIContractFactory("ERC20", ERC20_ABI).at(CRV_TOKEN)
 

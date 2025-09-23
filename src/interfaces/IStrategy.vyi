@@ -38,6 +38,16 @@ def set_target_hook(new_hook: address):
 
 
 @external
+def migrate_booster(new_booster_id: uint256, extra_rewards: DynArray[address, 10]):
+    ...
+
+
+@external
+def admin_unwind_rewards(to: address, extra_rewards: DynArray[address, 10]):
+    ...
+
+
+@external
 def deposit(amount: uint256):
     ...
 

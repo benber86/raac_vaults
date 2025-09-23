@@ -154,6 +154,26 @@ class StatefulVault(RuleBasedStateMachine):
                 max_withdraw, self.mock_vault.previewRedeem(shares_to_withdraw)
             )
 
+            # Avoid leaving non-zero raw supply below MIN_SHARES
+            min_raw = self.mock_vault.MIN_SHARES()
+            raw_before = self.mock_vault.raw_total_supply()
+            expected_burn = self.mock_vault.previewWithdraw(assets_to_withdraw)
+            predicted_raw_after = raw_before - expected_burn
+
+            if predicted_raw_after > 0 and predicted_raw_after < min_raw:
+                # If user owns all shares, redeem all to zero; else skip
+                if user_shares == raw_before:
+                    self.mock_vault.redeem(user_shares, user, user)
+                    strategy_assets_after = (
+                        self.mock_strategy_contract.total_assets()
+                    )
+                    print(
+                        f"Assets withdrawn (full redeem): {(strategy_assets_before - strategy_assets_after) / 10**18:,.2f}"
+                    )
+                    return
+                else:
+                    return
+
             self.mock_vault.withdraw(assets_to_withdraw, user, user)
 
             strategy_assets_after = self.mock_strategy_contract.total_assets()
@@ -250,6 +270,19 @@ class StatefulVault(RuleBasedStateMachine):
         with boa.env.prank(user):
             max_redeem = self.mock_vault.maxRedeem(user)
             shares_to_redeem = min(max_redeem, shares_to_redeem)
+
+            # Avoid leaving non-zero raw supply below MIN_SHARES
+            min_raw = self.mock_vault.MIN_SHARES()
+            raw_before = self.mock_vault.raw_total_supply()
+            predicted_raw_after = raw_before - shares_to_redeem
+
+            if predicted_raw_after > 0 and predicted_raw_after < min_raw:
+                # If user owns all shares, redeem all to zero
+                if user_shares == raw_before:
+                    shares_to_redeem = user_shares
+                else:
+                    # skip operation to avoid revert
+                    return
 
             assets_received = self.mock_vault.redeem(
                 shares_to_redeem, user, user

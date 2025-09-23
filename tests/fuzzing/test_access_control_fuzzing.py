@@ -52,7 +52,7 @@ class TestAccessControlFuzzing:
             self._setup_vault_components(pyusd_vault)
         )
         with boa.env.prank(vault.address):
-            if v < MAX_PLATFORM_FEE:
+            if v <= MAX_PLATFORM_FEE:
                 strategy_contract.set_platform_fee(v)
                 assert strategy_contract.platform_fee() == v
             else:
@@ -83,7 +83,7 @@ class TestAccessControlFuzzing:
             self._setup_vault_components(pyusd_vault)
         )
         with boa.env.prank(vault.address):
-            if v < MAX_CALLER_FEE:
+            if v <= MAX_CALLER_FEE:
                 strategy_contract.set_caller_fee(v)
                 assert strategy_contract.caller_fee() == v
             else:
