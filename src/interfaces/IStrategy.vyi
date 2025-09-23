@@ -38,7 +38,12 @@ def set_target_hook(new_hook: address):
 
 
 @external
-def update_booster_id(new_booster_id: uint256):
+def migrate_booster(new_booster_id: uint256, extra_rewards: DynArray[address, 10]):
+    ...
+
+
+@external
+def admin_unwind_rewards(to: address, extra_rewards: DynArray[address, 10]):
     ...
 
 

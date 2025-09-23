@@ -149,22 +149,32 @@ def update_harvester(
 
 
 @external
-def update_booster_id(_new_booster_id: uint256):
+def migrate_booster(
+    _new_booster_id: uint256, _extra_rewards: DynArray[address, constants.MAX_REWARD_TOKENS] = []
+):
     """
-    @notice Update the Convex booster pool ID in the strategy
+    @notice Migrate the strategy to a new Convex booster pool
     @param _new_booster_id New Convex pool ID to use for deposits
-    @dev Used when the original pool is shut down. Only callable by strategy managers.
+    @dev Only callable by strategy managers or admin. Updates factory registry.
     """
     assert (
         access_control.hasRole[STRATEGY_MANAGER_ROLE][msg.sender]
         or access_control.hasRole[access_control.DEFAULT_ADMIN_ROLE][msg.sender]
     )
-    extcall IStrategy(erc4626.strategy).update_booster_id(_new_booster_id)
+    extcall IStrategy(erc4626.strategy).migrate_booster(_new_booster_id, _extra_rewards)
 
     # Update factory registry with new booster_id
     harvester: address = staticcall IStrategy(erc4626.strategy).harvester()
     factory: address = staticcall IHarvester(harvester).factory()
     extcall IVaultFactory(factory).update_booster_id(_new_booster_id)
+
+
+@external
+def admin_unwind_rewards(
+    _to: address, _extra_rewards: DynArray[address, constants.MAX_REWARD_TOKENS]
+):
+    assert access_control.hasRole[access_control.DEFAULT_ADMIN_ROLE][msg.sender]
+    extcall IStrategy(erc4626.strategy).admin_unwind_rewards(_to, _extra_rewards)
 
 
 @external
