@@ -67,6 +67,14 @@ abi_from_explorer = true
 address = "0x625E92624Bc2D88619ACCc1788365A69767f6200"
 abi_from_explorer = true
 
+[networks.mainnet-fork.contracts.fxn_token]
+address = "0x365AccFCa291e7D3914637ABf1F7635dB165Bb09"
+abi_from_explorer = true
+
+[networks.mainnet-fork.contracts.rsup_token]
+address = "0x419905009e4656fdC02418C7Df35B1E61Ed5F726"
+abi_from_explorer = true
+
 [tool.isort]
 profile = "black"
 
