@@ -17,12 +17,12 @@ from tests.utils.abis import (
     CONVEX_STASH_ABI,
     CURVE_STABLESWAP_ABI,
     CURVE_STABLESWAP_NG_ABI,
-    ERC20_ABI,
 )
 from tests.utils.constants import (
     CONVEX_BOOSTER,
     CONVEX_BOOSTER_OWNER,
     CRVUSD_POOLS,
+    FXN_TOKEN,
     RSUP_STAKER_CONTRACT,
     RSUP_TOKEN,
     ZERO_ADDRESS,
@@ -52,6 +52,16 @@ def crv_token() -> VyperContract:
 @pytest.fixture(scope="session")
 def cvx_token() -> VyperContract:
     return get_config().get_active_network().manifest_named("cvx_token")
+
+
+@pytest.fixture(scope="session")
+def fxn_token() -> VyperContract:
+    return get_config().get_active_network().manifest_named("fxn_token")
+
+
+@pytest.fixture(scope="session")
+def rsup_token() -> VyperContract:
+    return get_config().get_active_network().manifest_named("rsup_token")
 
 
 @pytest.fixture(scope="session")
@@ -277,7 +287,9 @@ def test_permissioned_vault(pyusd_vault):
 
 
 @pytest.fixture(scope="module")
-def set_up_extra_rewards_for_pool(get_base_reward_pool, pool_list):
+def set_up_extra_rewards_for_pool(
+    get_base_reward_pool, pool_list, fxn_token, rsup_token
+):
     def inner(delay=0):
         if delay > 0:
             boa.env.time_travel(seconds=delay)
@@ -288,10 +300,10 @@ def set_up_extra_rewards_for_pool(get_base_reward_pool, pool_list):
             )
             with boa.env.prank(CONVEX_BOOSTER_OWNER):
                 stash.setExtraReward(RSUP_TOKEN)
+                stash.setExtraReward(FXN_TOKEN)
             with boa.env.prank(RSUP_STAKER_CONTRACT):
-                ABIContractFactory("ERC20", ERC20_ABI).at(RSUP_TOKEN).transfer(
-                    stash, int(1_000_000 * 1e18)
-                )
+                rsup_token.transfer(stash, int(1_000_000 * 1e18))
+            boa.deal(fxn_token, stash.address, int(1_000_000 * 1e18))
             with boa.env.prank(CONVEX_BOOSTER):
                 stash.processStash()
 

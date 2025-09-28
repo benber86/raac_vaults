@@ -11,7 +11,7 @@ def test_vault_update_harvester(
 
     vault_contract = raac_vault.at(vault_addr)
     strategy_contract = strategy.at(strategy_addr)
-    new_harvester = vault_factory.deploy_harvester_instance(0, strategy_addr)
+    new_harvester = vault_factory.deploy_harvester_instance(0, vault_addr)
 
     vault_id = vault_factory.vault_to_id(vault_addr)
 
@@ -88,6 +88,19 @@ def test_vault_set_target_hook(
     assert harvester_contract.target_hook() == new_hook
 
 
+def test_vault_migrate_booster(test_permissioned_vault, strategy_manager):
+    vault_addr, strategy_addr, harvester_addr = test_permissioned_vault
+
+    vault_contract = raac_vault.at(vault_addr)
+
+    new_booster_id = 999
+
+    # Should revert because the current pool is not shutdown on Booster
+    with boa.reverts():
+        with boa.env.prank(strategy_manager):
+            vault_contract.migrate_booster(new_booster_id)
+
+
 def test_vault_unauthorized_access(test_permissioned_vault, accounts):
     vault_addr, strategy_addr, harvester_addr = test_permissioned_vault
 
@@ -102,3 +115,7 @@ def test_vault_unauthorized_access(test_permissioned_vault, accounts):
     with boa.reverts():
         with boa.env.prank(unauthorized_user):
             vault_contract.set_platform_fee(500)
+
+    with boa.reverts():
+        with boa.env.prank(unauthorized_user):
+            vault_contract.migrate_booster(999)

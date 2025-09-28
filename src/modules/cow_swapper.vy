@@ -1,11 +1,10 @@
-# pragma version 0.4.3
-# pragma nonreentrancy on
+# pragma version ^0.4.1
 
 """
 @title CoW Protocol Conditional Order Handler
 @custom:contract-name cow_conditional_order
 @license MIT
-@author RAAC
+@author benny
 @notice A contract for creating and managing CoW Protocol conditional orders
 @dev CowSwap swaps are asynchronous meaning that harvests can't be done atomically
      Instead, the harvester will use rewards from the previous harvest to forward
@@ -24,29 +23,15 @@
 """
 
 from ethereum.ercs import IERC20
-from src.interfaces import IStrategy
-from src.interfaces import IVault
-from src.modules import constants
-from src.modules.swappers import swapper
+from ethereum.ercs import IERC165
+from ..interfaces import IStrategy
+from ..interfaces import IVault
+from . import constants
+from . import swapper
 
 initializes: swapper
 
-exports: constants.MAX_TOKENS
-
-exports: (
-    swapper.extra_reward_hook,
-    swapper.factory,
-    swapper.set_extra_reward_hook,
-    swapper.set_strategy,
-    swapper.set_target_hook,
-    swapper.strategy,
-    swapper.target_hook,
-    swapper.transfer_to_reward_hook,
-    swapper.transfer_to_target_hook,
-    swapper.treasury,
-    swapper.forward_tokens,
-    swapper.__default__,
-)
+exports: swapper.__interface__
 
 
 interface IComposableCoW:
@@ -128,21 +113,22 @@ struct TokenOrderInfo:
     sell_amount: uint256
 
 
+# 10 extra reward tokens max + cvx/crv
+MAX_TOKENS: public(constant(uint256)) = constants.MAX_REWARD_TOKENS + 2
 COMPOSABLE_COW: public(constant(address)) = 0xfdaFc9d1902f4e0b84f65F49f244b32b31013b74
 VAULT_RELAYER: public(constant(address)) = 0xC92E8bdf79f0507f65a392b0ab4667716BFE0110
 ORDER_KIND_SELL: constant(bytes32) = keccak256("sell")
 BALANCE_ERC20: constant(bytes32) = keccak256("erc20")
-# https://explorer.cow.fi/appdata?tab=encode
-APP_DATA: constant(bytes32) = empty(bytes32)
+APP_DATA: constant(bytes32) = keccak256("RAAC")
 
 SUPPORTED_INTERFACES: constant(bytes4[3]) = [
-    0x1626ba7e,  # isValidSignature(bytes32,bytes) / ERC1271_MAGIC_VALUE
+    0x1626ba7e,  # isValidSignature(bytes32,bytes)
     0x01ffc9a7,  # supportsInterface(bytes4)
     0xb8296fc4,  # getTradeableOrder(address,address,bytes32,bytes,bytes)
 ]
-SIGNATURE_VERIFIER_MUXER_INTERFACE: constant(bytes4) = 0x62af8dc2
 DAY: constant(uint256) = 60 * 60 * 24
 delay: public(uint256)
+owner: public(address)
 
 token_order_info: public(HashMap[address, TokenOrderInfo])
 token_orders: HashMap[address, bool]
@@ -164,37 +150,22 @@ def __init__(_factory: address):
 
 
 @external
-def set_delay(_delay: uint256):
-    """
-    @notice Set the validity period for CoW Protocol conditional orders
-    @param _delay Time in seconds that orders remain valid after creation
-    @dev The delay determines how long conditional orders stay active before expiring.
-         Orders can only be refreshed/updated after the delay period has passed since
-         their last_order_time. This prevents excessive order creation while ensuring
-         orders don't become stale with outdated pricing. Must be less than 7 days.
-         Only callable by addresses with HARVESTER_ROLE.
-    """
-    vault: IVault = IVault(staticcall IStrategy(swapper.strategy).vault())
+def set_delay(delay: uint256):
+    vault: IVault = IVault(staticcall IStrategy(swapper.fee_collector.strategy).vault())
     assert staticcall vault.hasRole(staticcall vault.HARVESTER_ROLE(), msg.sender), "Manager only"
-    assert (_delay < DAY * 7), "Delay too long"
-    self.delay = _delay
-    log DelayUpdated(delay=_delay)
+    assert (delay < DAY * 7), "Delay too long"
+    self.delay = delay
+    log DelayUpdated(delay=delay)
 
 
 @external
-def set_approvals():
+def set_approval(_token: address):
     """
-    @notice Set token approvals for COW Protocol vault relayer
-    @dev Approves CRV and CVX tokens for swapping via COW Protocol
+    @notice Approve spending of a token by the cowswap vault relayer
+    @param _token The token to approve
     """
-    # CRV token approval
-    assert extcall IERC20(constants.CRV_TOKEN).approve(VAULT_RELAYER, 0, default_return_value=True)
-    assert extcall IERC20(constants.CRV_TOKEN).approve(
-        VAULT_RELAYER, max_value(uint256), default_return_value=True
-    )
-    # CVX token approval
-    assert extcall IERC20(constants.CVX_TOKEN).approve(VAULT_RELAYER, 0, default_return_value=True)
-    assert extcall IERC20(constants.CVX_TOKEN).approve(
+    assert extcall IERC20(_token).approve(VAULT_RELAYER, 0, default_return_value=True)
+    assert extcall IERC20(_token).approve(
         VAULT_RELAYER, max_value(uint256), default_return_value=True
     )
 
@@ -205,8 +176,8 @@ def _swap(
     _min_amount_out: uint256,
     _reward_hook_calldata: Bytes[4096],
     _target_hook_calldata: Bytes[4096],
-    _tokens: DynArray[address, constants.MAX_TOKENS],
-    _buy_amounts: DynArray[uint256, constants.MAX_TOKENS],
+    _tokens: DynArray[address, MAX_TOKENS],
+    _buy_amounts: DynArray[uint256, MAX_TOKENS],
 ) -> uint256:
     """
     @notice Submit multiple token swaps to a single target token
@@ -231,7 +202,7 @@ def _swap(
             value=0,
         )
 
-    for i: uint256 in range(constants.MAX_TOKENS):
+    for i: uint256 in range(MAX_TOKENS):
         if i == len(_tokens):
             break
         if not self.token_orders[_tokens[i]]:
@@ -244,15 +215,6 @@ def _swap(
                 True,
             )
             self.token_orders[_tokens[i]] = True
-            # in case we want to process extra rewards with CoW rather than hook, we set approvals here
-            if _tokens[i] not in [constants.CVX_TOKEN, constants.CRV_TOKEN]:
-                assert extcall IERC20(_tokens[i]).approve(
-                    VAULT_RELAYER, 0, default_return_value=True
-                )
-                assert extcall IERC20(_tokens[i]).approve(
-                    VAULT_RELAYER, max_value(uint256), default_return_value=True
-                )
-
         # Check if order has expired
         # If no order exists and last_order_time is 0, this will also create an entry
         if self.token_order_info[_tokens[i]].last_order_time + self.delay <= block.timestamp:
@@ -268,13 +230,7 @@ def _swap(
     if crvusd_available == 0:
         return 0
 
-    platform_fee: uint256 = staticcall IStrategy(swapper.strategy).platform_fee()
-    treasury: address = swapper._treasury()
-    swapper._collect_fee(treasury, constants.CRVUSD_TOKEN, crvusd_available, platform_fee)
-
-    # Pay the caller incentive in crvUSD
-    caller_fee: uint256 = staticcall IStrategy(swapper.strategy).caller_fee()
-    swapper._collect_fee(_caller, constants.CRVUSD_TOKEN, crvusd_available, caller_fee)
+    swapper._pay_out_caller_fee(_caller, constants.CRVUSD_TOKEN, crvusd_available)
 
     # if we have a hook contract to handle further operations
     if swapper.target_hook != empty(address):
@@ -284,13 +240,11 @@ def _swap(
             value=0,
         )
 
-    target_asset: address = staticcall IStrategy(swapper.strategy).asset()
+    target_asset: address = staticcall IStrategy(swapper.fee_collector.strategy).asset()
     target_asset_balance: uint256 = staticcall IERC20(target_asset).balanceOf(self)
-    assert target_asset_balance >= _min_amount_out, "Slippage"
+    assert target_asset_balance > _min_amount_out, "Slippage"
     assert extcall IERC20(target_asset).transfer(
-        swapper.strategy,
-        target_asset_balance,
-        default_return_value=True,
+        swapper.fee_collector.strategy, target_asset_balance, default_return_value=True
     )
     return target_asset_balance
 
@@ -319,34 +273,6 @@ def getTradeableOrder(
     @return Order parameters
     """
     sell_token: address = convert(convert(_static_input, bytes20), address)
-
-    if not self.token_orders[sell_token]:
-        raw_revert(
-            abi_encode(
-                block.timestamp + (DAY),
-                "Order not registered",
-                method_id=method_id("PollTryAtEpoch(uint256,string)"),
-            )
-        )
-
-    if self.token_order_info[sell_token].last_order_time == 0:
-        raw_revert(
-            abi_encode(
-                block.timestamp + (DAY),
-                "Order never initialized",
-                method_id=method_id("PollTryAtEpoch(uint256,string)"),
-            )
-        )
-
-    if self.token_order_info[sell_token].sell_amount == 0:
-        raw_revert(
-            abi_encode(
-                block.timestamp + (DAY),
-                "No sell amount",
-                method_id=method_id("PollTryAtEpoch(uint256,string)"),
-            )
-        )
-
     order: GPv2OrderData = self._create_order(sell_token)
     sell_balance: uint256 = staticcall IERC20(sell_token).balanceOf(self)
     if sell_balance == 0:
@@ -368,8 +294,8 @@ def getTradeableOrder(
     return order
 
 
-@internal
 @view
+@internal
 def _verify(
     _owner: address,
     _sender: address,
@@ -384,14 +310,12 @@ def _verify(
     @notice Verify that a proposed order matches our conditions
     @dev This is called by ComposableCoW to validate orders
     """
-    if _offchain_input != b"":
-        raw_revert(abi_encode("NonZeroOffchainInput", method_id=method_id("OrderNotValid(string)")))
-
     sell_token: address = convert(convert(_static_input, bytes20), address)
     if not self.token_orders[sell_token]:
         raw_revert(abi_encode("Wrong token", method_id=method_id("OrderNotValid(string)")))
 
     expected_order: GPv2OrderData = self._create_order(sell_token)
+    expected_order.sellAmount = _order.sellAmount
     expected_order.buyAmount = max(_order.buyAmount, expected_order.buyAmount)
     if abi_encode(expected_order) != abi_encode(_order):
         raw_revert(abi_encode("Invalid order", method_id=method_id("OrderNotValid(string)")))
@@ -414,14 +338,7 @@ def verify(
     @dev This is called by ComposableCoW to validate orders
     """
     self._verify(
-        _owner,
-        _sender,
-        _hash,
-        _domain_separator,
-        _ctx,
-        _static_input,
-        _offchain_input,
-        _order,
+        _owner, _sender, _hash, _domain_separator, _ctx, _static_input, _offchain_input, _order
     )
 
 
@@ -462,6 +379,7 @@ def isValidSignature(_hash: bytes32, _signature: Bytes[2048]) -> bytes4:
     # Verify the order using existing verify logic
     # Extract static input from order (assuming sellToken is the static input)
     static_input: Bytes[20] = concat(b"", convert(order.sellToken, bytes20))
+    domain_separator: bytes32 = staticcall IComposableCoW(COMPOSABLE_COW).domainSeparator()
     self._verify(
         msg.sender,  # owner
         msg.sender,  # _sender
@@ -484,16 +402,14 @@ def isValidSignature(_hash: bytes32, _signature: Bytes[2048]) -> bytes4:
     )
 
 
-@external
 @pure
+@external
 def supportsInterface(_interface_id: bytes4) -> bool:
     """
     @notice Check if this contract supports a given interface
     @dev Required for ERC-165 compliance
     @param _interface_id The interface identifier to check
     """
-    # Avoid InvalidFallbackHandler error in ComposableCow and switch to EIP-1271
-    assert _interface_id != SIGNATURE_VERIFIER_MUXER_INTERFACE
     return _interface_id in SUPPORTED_INTERFACES
 
 
@@ -504,7 +420,7 @@ def cancel_order(_token: address):
     @param _token The token whose order should be cancelled
     @dev Only callable by harvest manager
     """
-    vault: IVault = IVault(staticcall IStrategy(swapper.strategy).vault())
+    vault: IVault = IVault(staticcall IStrategy(swapper.fee_collector.strategy).vault())
     assert staticcall vault.hasRole(staticcall vault.HARVESTER_ROLE(), msg.sender), "Manager only"
 
     assert self.token_orders[_token], "No order exists"
@@ -518,9 +434,6 @@ def cancel_order(_token: address):
     order_hash: bytes32 = staticcall IComposableCoW(COMPOSABLE_COW).hash(order_params)
 
     extcall IComposableCoW(COMPOSABLE_COW).remove(order_hash)
-
-    assert extcall IERC20(_token).approve(VAULT_RELAYER, 0, default_return_value=True)
-
     self.token_orders[_token] = False
     self.token_order_info[_token] = TokenOrderInfo(last_order_time=0, buy_amount=0, sell_amount=0)
 

@@ -9,6 +9,8 @@ from tests.utils.constants import (
     CRVUSD_POOLS,
     CRVUSD_TOKEN,
     CURVE_TRICRV_POOL,
+    FXN_TOKEN,
+    FXN_WETH_POOL,
     RSUP_TOKEN,
     RSUP_WETH_POOL,
     WETH_TOKEN,
@@ -65,9 +67,9 @@ def test_vault_harvest_single_staker_with_extra_rewards(
     )
     target_hook_calldata = target_selector + target_encoded_args
 
-    # Extra reward hook calldata for RSUP -> WETH -> crvUSD using NEW ROUTER FORMAT
+    # Extra reward hook calldata for RSUP -> WETH -> crvUSD using struct-based format
     # Route: [RSUP, RSUP/WETH pool, WETH, TRICRV pool, crvUSD, 0x00, ...]
-    route = [
+    rsup_route = [
         RSUP_TOKEN,  # Initial token
         RSUP_WETH_POOL,  # RSUP/WETH pool
         WETH_TOKEN,  # Intermediate token
@@ -82,7 +84,7 @@ def test_vault_harvest_single_staker_with_extra_rewards(
     ]
 
     # swap params format: [i, j, swap_type, pool_type, n_coins] for each swap
-    swap_params = [
+    rsup_swap_params = [
         [
             1,
             0,
@@ -102,7 +104,7 @@ def test_vault_harvest_single_staker_with_extra_rewards(
         [0, 0, 0, 0, 0],  # Unused
     ]
 
-    pools = [
+    rsup_pools = [
         RSUP_WETH_POOL,  # First pool (from UI output)
         CURVE_TRICRV_POOL,  # Second pool (from UI output)
         ZERO_ADDRESS,  # Unused
@@ -110,18 +112,65 @@ def test_vault_harvest_single_staker_with_extra_rewards(
         ZERO_ADDRESS,  # Unused
     ]
 
-    # Update function signature for new router
-    reward_sig = (
-        "process_extra_rewards(address,address[11],uint256[5][5],address[5])"
-    )
+    # FXN -> WETH -> crvUSD routing
+    fxn_route = [
+        FXN_TOKEN,  # Initial token
+        FXN_WETH_POOL,  # FXN/WETH pool
+        WETH_TOKEN,  # Intermediate token
+        CURVE_TRICRV_POOL,  # TRICRV pool
+        CRVUSD_TOKEN,  # Final token
+        ZERO_ADDRESS,  # End marker
+        ZERO_ADDRESS,  # Padding
+        ZERO_ADDRESS,  # Padding
+        ZERO_ADDRESS,  # Padding
+        ZERO_ADDRESS,  # Padding
+        ZERO_ADDRESS,  # Padding (11 total)
+    ]
+
+    fxn_swap_params = [
+        [
+            1,
+            0,
+            1,
+            20,
+            2,
+        ],  # FXN (index 1) -> WETH (index 0), exchange, twocrypto-ng, 2 coins
+        [
+            1,
+            0,
+            1,
+            30,
+            3,
+        ],  # WETH (index 1) -> crvUSD (index 0), exchange, tricrypto-ng, 3 coins
+        [0, 0, 0, 0, 0],  # Unused
+        [0, 0, 0, 0, 0],  # Unused
+        [0, 0, 0, 0, 0],  # Unused
+    ]
+
+    fxn_pools = [
+        FXN_WETH_POOL,  # First pool (from UI output)
+        CURVE_TRICRV_POOL,  # Second pool (from UI output)
+        ZERO_ADDRESS,  # Unused
+        ZERO_ADDRESS,  # Unused
+        ZERO_ADDRESS,  # Unused
+    ]
+
+    # Create ExtraRewardParams structs as tuples (token, route, swap_params, pools)
+    extra_reward_params = [
+        (RSUP_TOKEN, rsup_route, rsup_swap_params, rsup_pools),
+        (FXN_TOKEN, fxn_route, fxn_swap_params, fxn_pools),
+    ]
+
+    # Update function signature for struct-based interface
+    reward_sig = "process_extra_rewards((address,address[11],uint256[5][5],address[5])[])"
     reward_selector = function_signature_to_4byte_selector(reward_sig)
     reward_encoded_args = abi_encode(
-        "(address,address[11],uint256[5][5],address[5])",
-        [RSUP_TOKEN, route, swap_params, pools],
+        "((address,address[11],uint256[5][5],address[5])[])",
+        [extra_reward_params],
     )
     reward_hook_calldata = reward_selector + reward_encoded_args
 
-    extra_rewards = [RSUP_TOKEN]
+    extra_rewards = [RSUP_TOKEN, FXN_TOKEN]
 
     boa.env.time_travel(seconds=86400 * 7)
 

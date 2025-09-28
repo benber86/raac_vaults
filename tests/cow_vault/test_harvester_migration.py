@@ -17,6 +17,7 @@ def test_cow_harvester_migration_with_tokens(
     pool_name,
     strategy_manager,
     set_up_extra_rewards_for_pool,
+    rsup_token,
 ):
     vault_addr, strategy_addr, old_harvester_addr = cow_vault_list[pool_name]
 
@@ -25,7 +26,6 @@ def test_cow_harvester_migration_with_tokens(
 
     set_up_extra_rewards_for_pool()
 
-    rsup_token = ABIContractFactory("ERC20", ERC20_ABI).at(RSUP_TOKEN)
     cvx_token = ABIContractFactory("ERC20", ERC20_ABI).at(CVX_TOKEN)
     crv_token = ABIContractFactory("ERC20", ERC20_ABI).at(CRV_TOKEN)
 
@@ -116,13 +116,17 @@ def test_cow_harvester_migration_with_tokens(
 
 @pytest.mark.parametrize("pool_name", [PYUSD_POOL_NAME, USDC_POOL_NAME])
 def test_cow_harvester_migration_no_tokens(
-    cow_vault_list, vault_factory, funded_accounts, pool_name, strategy_manager
+    cow_vault_list,
+    vault_factory,
+    funded_accounts,
+    pool_name,
+    strategy_manager,
+    rsup_token,
 ):
     vault_addr, strategy_addr, old_harvester_addr = cow_vault_list[pool_name]
 
     vault_contract = raac_vault.at(vault_addr)
     strategy_contract = strategy.at(strategy_addr)
-    rsup_token = ABIContractFactory("ERC20", ERC20_ABI).at(RSUP_TOKEN)
     cvx_token = ABIContractFactory("ERC20", ERC20_ABI).at(CVX_TOKEN)
     crv_token = ABIContractFactory("ERC20", ERC20_ABI).at(CRV_TOKEN)
 

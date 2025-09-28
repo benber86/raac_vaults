@@ -30,9 +30,9 @@ asset: public(reentrant(immutable(address)))
 # Contract handling the processing of rewards
 harvester: public(reentrant(address))
 # Convex pool ID for deposits
-booster_id: public(immutable(uint256))
-# Convex staking contract for this pool
-rewards_contract: public(immutable(address))
+booster_id: public(uint256)
+# Convex staking contract for this pool (mutable to allow migration)
+rewards_contract: public(reentrant(address))
 # Fee taken by the platform (basis points)
 platform_fee: public(reentrant(uint256))
 # Fee paid to harvest callers (basis points)
@@ -77,8 +77,8 @@ def __init__(
     @dev Sets initial platform fee to 20% and caller fee to 1%
     """
 
-    booster_id = _booster_id
-    rewards_contract = _rewards_contract
+    self.booster_id = _booster_id
+    self.rewards_contract = _rewards_contract
     asset = _asset
     self.harvester = _harvester
     self.platform_fee = 2000  # 20%
@@ -120,7 +120,7 @@ def set_platform_fee(_platform_fee: uint256):
     @param _platform_fee New platform fee in basis points (e.g., 2000 = 20%)
     """
     assert msg.sender == self.vault, "Vault only"
-    assert _platform_fee < constants.MAX_PLATFORM_FEE, "Fee too high"
+    assert _platform_fee <= constants.MAX_PLATFORM_FEE, "Fee too high"
     self.platform_fee = _platform_fee
     log PlatformFeeUpdated(platform_fee=_platform_fee)
 
@@ -132,7 +132,7 @@ def set_caller_fee(_caller_fee: uint256):
     @param _caller_fee New caller fee in basis points (e.g., 100 = 1%)
     """
     assert msg.sender == self.vault, "Vault only"
-    assert _caller_fee < constants.MAX_CALLER_FEE, "Fee too high"
+    assert _caller_fee <= constants.MAX_CALLER_FEE, "Fee too high"
     self.caller_fee = _caller_fee
     log CallerFeeUpdated(caller_fee=_caller_fee)
 
@@ -171,6 +171,91 @@ def set_target_hook(_new_hook: address):
 
 
 @external
+def migrate_booster(
+    _new_booster_id: uint256, _extra_rewards: DynArray[address, constants.MAX_REWARD_TOKENS]
+):
+    """
+    @notice One-shot migration to a new Convex booster pool.
+    @param _new_booster_id New Convex pool ID
+    @param _extra_rewards Optional extra reward tokens to forward along with CRV/CVX
+    @dev Claims rewards from old pool, forwards to harvester, unstakes LP, updates
+         pointers using Booster.poolInfo, and deposits LP into the new pool.
+    """
+    assert msg.sender == self.vault, "Vault only"
+
+    # check that pool is shutdown before migration
+    old_info: (address, address, address, address, address, bool) = staticcall IBooster(
+        constants.CONVEX_BOOSTER
+    ).poolInfo(self.booster_id)
+    assert old_info[5] == True, "Old pool not shutdown"
+
+    old_rewards: address = self.rewards_contract
+
+    # claim rewards from old pool
+    extcall IBasicRewards(old_rewards).getReward()
+
+    # forward CRV/CVX first
+    self._forward_rewards([constants.CVX_TOKEN, constants.CRV_TOKEN])
+
+    # forward extra rewards if any
+    if len(_extra_rewards) > 0:
+        self._forward_rewards(_extra_rewards)
+
+    staked_balance: uint256 = staticcall IBasicRewards(old_rewards).balanceOf(self)
+    if staked_balance > 0:
+        extcall IConvexStaking(old_rewards).withdrawAndUnwrap(staked_balance, False)
+
+    pool_info: (address, address, address, address, address, bool) = staticcall IBooster(
+        constants.CONVEX_BOOSTER
+    ).poolInfo(_new_booster_id)
+    assert pool_info[0] == asset, "Wrong LP token"
+    assert pool_info[5] == False, "New pool shutdown"
+    self.booster_id = _new_booster_id
+    self.rewards_contract = pool_info[3]
+
+    # deposit any LP held by the strategy into the new pool
+    lp_balance: uint256 = staticcall IERC20(asset).balanceOf(self)
+    if lp_balance > 0:
+        self._deposit(lp_balance)
+
+
+@external
+def admin_unwind_rewards(
+    _to: address, _extra_rewards: DynArray[address, constants.MAX_REWARD_TOKENS]
+):
+    """
+    @notice Claim rewards from current rewards contract and forward to a specified address.
+    @dev Vault-only. Requires the current pool to be shutdown on Booster. Does not move LP.
+    """
+    assert msg.sender == self.vault, "Vault only"
+    assert _to != empty(address), "Zero recipient"
+
+    pool_info: (address, address, address, address, address, bool) = staticcall IBooster(
+        constants.CONVEX_BOOSTER
+    ).poolInfo(self.booster_id)
+    assert pool_info[5] == True, "Pool not shutdown"
+
+    extcall IBasicRewards(self.rewards_contract).getReward()
+
+    tokens_to_forward: DynArray[address, constants.MAX_TOKENS] = [
+        constants.CRV_TOKEN,
+        constants.CVX_TOKEN,
+    ]
+    for i: uint256 in range(constants.MAX_REWARD_TOKENS):
+        if i == len(_extra_rewards):
+            break
+        tokens_to_forward.append(_extra_rewards[i])
+
+    for i: uint256 in range(constants.MAX_TOKENS):
+        if i == len(tokens_to_forward):
+            break
+        token: address = tokens_to_forward[i]
+        bal: uint256 = staticcall IERC20(token).balanceOf(self)
+        if bal > 0:
+            assert extcall IERC20(token).transfer(_to, bal, default_return_value=True)
+
+
+@external
 def deposit(_amount: uint256):
     """
     @notice Deposit LP tokens into the Convex strategy
@@ -190,7 +275,7 @@ def withdraw(_amount: uint256, _receiver: address):
     assert msg.sender == self.vault, "Vault only"
     # No need to claim rewards on withdrawal as they are for the whole vault
     # and can be claimed during next harvest
-    extcall IConvexStaking(rewards_contract).withdrawAndUnwrap(_amount, False)
+    extcall IConvexStaking(self.rewards_contract).withdrawAndUnwrap(_amount, False)
     assert extcall IERC20(asset).transfer(
         _receiver, _amount, default_return_value=True
     ), "erc4626: transfer operation did not succeed"
@@ -204,12 +289,12 @@ def total_assets() -> uint256:
     @return The total balance of LP tokens staked in the Convex rewards contract
     @dev This represents assets actively earning rewards, unstaked tokens not included
     """
-    return staticcall IBasicRewards(rewards_contract).balanceOf(self)
+    return staticcall IBasicRewards(self.rewards_contract).balanceOf(self)
 
 
 @internal
 def _deposit(_amount: uint256):
-    extcall IBooster(constants.CONVEX_BOOSTER).deposit(booster_id, _amount, True)
+    extcall IBooster(constants.CONVEX_BOOSTER).deposit(self.booster_id, _amount, True)
 
 
 @internal
@@ -237,7 +322,7 @@ def _collect(_extra_rewards: DynArray[address, constants.MAX_REWARD_TOKENS]):
     @dev Always forwards CRV and CVX tokens, plus any specified extra rewards
     """
     # claim rewards from the staking contract
-    extcall IBasicRewards(rewards_contract).getReward()
+    extcall IBasicRewards(self.rewards_contract).getReward()
     # forward CRV and CVX rewards to the harvester
     self._forward_rewards([constants.CVX_TOKEN, constants.CRV_TOKEN])
     if len(_extra_rewards) > 0:

@@ -51,6 +51,7 @@ exports: (
     erc4626.unlock_scale,
     erc4626.unlocked_shares,
     erc4626.withdraw,
+    erc4626.MIN_SHARES,
 )
 
 exports: (
@@ -145,6 +146,35 @@ def update_harvester(
         extcall IStrategy(erc4626.strategy).set_extra_reward_hook(extra_reward_hook)
 
     extcall IVaultFactory(factory).update_harvester(_new_harvester)
+
+
+@external
+def migrate_booster(
+    _new_booster_id: uint256, _extra_rewards: DynArray[address, constants.MAX_REWARD_TOKENS] = []
+):
+    """
+    @notice Migrate the strategy to a new Convex booster pool
+    @param _new_booster_id New Convex pool ID to use for deposits
+    @dev Only callable by strategy managers or admin. Updates factory registry.
+    """
+    assert (
+        access_control.hasRole[STRATEGY_MANAGER_ROLE][msg.sender]
+        or access_control.hasRole[access_control.DEFAULT_ADMIN_ROLE][msg.sender]
+    )
+    extcall IStrategy(erc4626.strategy).migrate_booster(_new_booster_id, _extra_rewards)
+
+    # Update factory registry with new booster_id
+    harvester: address = staticcall IStrategy(erc4626.strategy).harvester()
+    factory: address = staticcall IHarvester(harvester).factory()
+    extcall IVaultFactory(factory).update_booster_id(_new_booster_id)
+
+
+@external
+def admin_unwind_rewards(
+    _to: address, _extra_rewards: DynArray[address, constants.MAX_REWARD_TOKENS]
+):
+    assert access_control.hasRole[access_control.DEFAULT_ADMIN_ROLE][msg.sender]
+    extcall IStrategy(erc4626.strategy).admin_unwind_rewards(_to, _extra_rewards)
 
 
 @external
